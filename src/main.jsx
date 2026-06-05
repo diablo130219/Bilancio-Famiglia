@@ -5,7 +5,7 @@ import {
   PiggyBank, Wallet, ShoppingCart, ReceiptText, NotebookPen, Target,
   CheckCircle2, Trash2, Plus, Heart, Coffee, Landmark, Briefcase,
   Users, Baby, Home, HandCoins, Star, Fuel, Gift, Info, AlertTriangle,
-  RotateCcw, Download, PieChart, CalendarCheck, TrendingUp, Sparkles, Trophy
+  RotateCcw, Download, BarChart3, ShieldCheck, DatabaseZap, PieChart, CalendarCheck, TrendingUp, Sparkles, Trophy
 } from "lucide-react";
 import "./style.css";
 
@@ -118,6 +118,7 @@ const loadState = () => {
 };
 
 function App() {
+  const [saveStatus, setSaveStatus] = useState("Pronto");
   const [state, setState] = useState(loadState);
   const [month, setMonth] = useState(localStorage.getItem(MONTH_KEY) || "Giugno");
   const [cloudStatus, setCloudStatus] = useState(supabase ? "Connessione cloud..." : "Solo locale");
@@ -224,6 +225,7 @@ function App() {
         cloudStatus={cloudStatus}
       />
 
+      <CloudToolsPanel state={state} result={result} />
       <ManagerDashboard result={result} data={data} month={month} />
 
       <main className="dashboard-grid">
@@ -237,6 +239,7 @@ function App() {
         <InsightsPanel data={data} result={result} />
         <GoalsPanel data={data} updateMonth={updateMonth} />
         <CalendarPanel data={data} />
+        <AnnualMiniPanel state={state} />
       </main>
     </div>
   );
@@ -278,6 +281,78 @@ function Header({ month, setMonth, year, updateYear, resetCurrentMonth, cloudSta
         <RotateCcw size={17} /> Azzera mese
       </button>
     </header>
+  );
+}
+
+
+
+function CloudToolsPanel({ state, result }) {
+  const annual = calculateAnnualStats(state);
+  return (
+    <section className="cloud-tools-panel">
+      <div className="cloud-tool-card">
+        <DatabaseZap size={22} />
+        <div>
+          <span>Cloud Supabase</span>
+          <strong>Sincronizzazione attiva</strong>
+          <small>Dati disponibili da PC, telefono e lavoro</small>
+        </div>
+      </div>
+
+      <div className="cloud-tool-card">
+        <ShieldCheck size={22} />
+        <div>
+          <span>Backup</span>
+          <strong>Esporta dati</strong>
+          <small>Scarica una copia JSON del bilancio</small>
+        </div>
+        <button className="mini-action" onClick={() => downloadJsonBackup(state)}>Scarica</button>
+      </div>
+
+      <div className="cloud-tool-card">
+        <BarChart3 size={22} />
+        <div>
+          <span>Anno</span>
+          <strong>{euro(annual.totalFree)}</strong>
+          <small>Somma soldi da gestire sui mesi</small>
+        </div>
+      </div>
+
+      <div className="cloud-tool-card">
+        <Trophy size={22} />
+        <div>
+          <span>Mese migliore</span>
+          <strong>{annual.best?.month || "-"}</strong>
+          <small>{euro(annual.best?.free || 0)}</small>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AnnualMiniPanel({ state }) {
+  const annual = calculateAnnualStats(state);
+  return (
+    <section className="annual-mini-panel">
+      <div className="section-heading">
+        <BarChart3 size={20} />
+        <div>
+          <h3>Riepilogo annuale cloud</h3>
+          <p>Primo storico automatico dei mesi salvati</p>
+        </div>
+      </div>
+
+      <div className="annual-table">
+        {annual.rows.map((row) => (
+          <div className="annual-row" key={row.month}>
+            <b>{row.month}</b>
+            <span>Entrate {euro(row.initial)}</span>
+            <span>Speso {euro(row.spent)}</span>
+            <strong className={row.free < 0 ? "danger" : ""}>{euro(row.free)}</strong>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -913,6 +988,49 @@ function getDaysLeftInMonth(year, monthName) {
 
 function sumObject(object, key) {
   return Object.values(object).reduce((total, item) => total + (Number(item[key]) || 0), 0);
+}
+
+
+function downloadJsonBackup(state) {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    app: "Bilancio Famiglia Premium",
+    version: "V8 Cloud Plus",
+    data: state
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `bilancio-famiglia-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function calculateAnnualStats(state) {
+  const rows = Object.entries(state || {}).map(([monthName, data]) => {
+    try {
+      const r = calculateMonth(data);
+      return {
+        month: monthName,
+        initial: r.totalInitial || 0,
+        spent: (r.totalBudgetSpent || 0) + (r.fixedPaid || 0),
+        free: r.freeMoney || 0,
+        fixedToPay: r.fixedToPay || 0
+      };
+    } catch {
+      return { month: monthName, initial: 0, spent: 0, free: 0, fixedToPay: 0 };
+    }
+  });
+
+  const best = [...rows].sort((a, b) => b.free - a.free)[0];
+  const worst = [...rows].sort((a, b) => a.free - b.free)[0];
+  const totalFree = rows.reduce((s, r) => s + r.free, 0);
+  const activeMonths = rows.filter((r) => r.initial !== 0 || r.spent !== 0 || r.free !== 0).length;
+
+  return { rows, best, worst, totalFree, activeMonths };
 }
 
 createRoot(document.getElementById("root")).render(<App />);

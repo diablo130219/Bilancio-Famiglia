@@ -1224,3 +1224,130 @@ tbody tr:hover td {
     justify-content: center;
   }
 }
+
+
+/* V8 Cloud Plus */
+.cloud-tools-panel {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 0 0 22px;
+}
+
+.cloud-tool-card {
+  min-height: 94px;
+  display: grid;
+  grid-template-columns: 46px 1fr auto;
+  align-items: center;
+  gap: 13px;
+  padding: 18px;
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(207, 227, 242, .95);
+  border-radius: 20px;
+  box-shadow: 0 16px 38px rgba(15, 23, 42, .07);
+}
+
+.cloud-tool-card svg {
+  color: #0f766e;
+  background: #ccfbf1;
+  width: 46px;
+  height: 46px;
+  padding: 11px;
+  border-radius: 15px;
+}
+
+.cloud-tool-card span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.cloud-tool-card strong {
+  display: block;
+  margin-top: 4px;
+  color: #0b345c;
+  font-size: 18px;
+}
+
+.cloud-tool-card small {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.mini-action {
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 13px;
+  background: linear-gradient(135deg, #0f766e, #0e63b6);
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.annual-mini-panel {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  background: rgba(255,255,255,.94);
+  border: 1px solid rgba(207, 227, 242, .95);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.annual-table {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 14px;
+}
+
+.annual-row {
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.annual-row b {
+  color: #0b345c;
+  font-size: 15px;
+}
+
+.annual-row span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.annual-row strong {
+  color: #047857;
+  font-size: 17px;
+}
+
+@media (max-width: 1500px) {
+  .cloud-tools-panel {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .annual-table {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 800px) {
+  .cloud-tools-panel,
+  .annual-table {
+    grid-template-columns: 1fr;
+  }
+
+  .cloud-tool-card {
+    grid-template-columns: 46px 1fr;
+  }
+
+  .mini-action {
+    grid-column: 1 / -1;
+  }
+}
