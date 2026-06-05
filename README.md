@@ -13,3 +13,7 @@ Versione migliorata:
 Static Site:
 - Build Command: `npm install && npm run build`
 - Publish Directory: `dist`
+
+
+## V6.1
+Correzione stabilità: compatibile con dati salvati dalle versioni precedenti nel browser.
