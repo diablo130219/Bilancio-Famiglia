@@ -1666,3 +1666,106 @@ tbody tr:hover td {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* V10 — niente doppioni e badge cloud non sovrapposto */
+.cloud-badge {
+  display: none !important;
+}
+
+.reset-month {
+  z-index: 20;
+  right: 8px;
+  bottom: -46px;
+  background: linear-gradient(135deg, #fee2e2, #fff1f2);
+  border: 1px solid #fecaca;
+  box-shadow: 0 12px 24px rgba(153, 27, 27, .12);
+}
+
+.analysis-panel-right .summary-title {
+  background: linear-gradient(135deg, #0f766e, #075985);
+}
+
+.right-hero {
+  margin: 14px;
+  padding: 22px;
+  text-align: center;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 80% 20%, rgba(255,255,255,.9), transparent 35%),
+    linear-gradient(160deg, #e0f2fe, #ecfdf5);
+  border: 1px solid #bfdbfe;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.75), 0 16px 35px rgba(14, 99, 182, .08);
+}
+
+.right-hero span {
+  display: block;
+  color: #0b345c;
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.right-hero strong {
+  display: block;
+  margin: 8px 0;
+  color: #047857;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.right-hero small {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.analysis-list {
+  display: grid;
+  gap: 10px;
+  padding: 0 14px 12px;
+}
+
+.analysis-row {
+  display: grid;
+  gap: 5px;
+  padding: 13px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.analysis-row span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.analysis-row strong {
+  color: #0b345c;
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.analysis-row small {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.compact-quote {
+  padding: 22px 12px !important;
+  font-size: 19px !important;
+}
+
+/* il pannello destro non ripete più il riepilogo contabile */
+.analysis-panel-right .summary-list,
+.analysis-panel-right .money-hero {
+  display: none !important;
+}
+
+@media (max-width: 1200px) {
+  .reset-month {
+    position: static;
+    margin: 0 auto;
+  }
+}

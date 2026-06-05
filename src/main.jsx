@@ -274,10 +274,6 @@ function Header({ month, setMonth, year, updateYear, resetCurrentMonth, cloudSta
         Piccoli passi<br />ogni giorno<br />portano a grandi<br />risultati ♡
       </section>
 
-      <div className={`cloud-badge ${cloudStatus === "Cloud attivo" ? "ok" : cloudStatus === "Errore cloud" ? "error" : "local"}`}>
-        {cloudStatus}
-      </div>
-
       <button className="reset-month" onClick={resetCurrentMonth}>
         <RotateCcw size={17} /> Azzera mese
       </button>
@@ -302,8 +298,8 @@ function CloudToolsPanel({ state, result }) {
           <CircleDollarSign size={24} />
           <div>
             <span>Centro controllo mese</span>
-            <strong>{euro(result.freeMoney)}</strong>
-            <small>Disponibilità reale dopo impegni futuri</small>
+            <strong>{euro(monthlyOut)}</strong>
+            <small>Uscite già fatte: variabili + fisse pagate</small>
           </div>
         </div>
 
@@ -731,49 +727,58 @@ function BudgetCard({ data, result, updateMonth }) {
 }
 
 function SummaryPanel({ result }) {
-  const rows = [
-    ["Fondi iniziali", result.totalInitial, "Totale di ciò che hai disponibile"],
-    ["Fondi scalati", result.totalVariable + result.totalFixed, "Soldi già utilizzati"],
-    ["Saldo fondi attuale", result.totalCurrent, "Quello che hai ora"],
-    ["Budget variabili totali", result.totalBudget, "Budget previsto"],
-    ["Variabili spese", result.totalBudgetSpent, "Già speso per variabili"],
-    ["Variabili ancora da usare", result.totalBudgetLeft, "Ancora disponibile variabili"],
-    ["Fisse/rate previste", result.fixedTotal, "Totale fisso mensile"],
-    ["Fisse/rate ancora da pagare", result.fixedToPay, "Quelle non ancora pagate"],
-    ["Impegni futuri", result.futureCommitments, "Variabili residue + fisse"],
-    ["Soldi da gestire", result.freeMoney, "Per imprevisti e libertà", true]
-  ];
-
   const statusClass = result.freeMoney < 0 ? "danger" : result.freeMoney < 300 ? "attention" : "ok";
+  const budgetUsed = result.totalBudget > 0 ? Math.round((result.totalBudgetSpent / result.totalBudget) * 100) : 0;
+  const savingRate = result.totalInitial > 0 ? Math.round((result.freeMoney / result.totalInitial) * 100) : 0;
+
+  const topCategory = Object.entries(result.budgets || {})
+    .map(([name, item]) => ({ name, spent: Number(item.spent) || 0 }))
+    .sort((a, b) => b.spent - a.spent)[0] || { name: "-", spent: 0 };
+
+  const topFund = Object.entries(result.funds || {})
+    .map(([name, item]) => ({ name, used: (Number(item.variable) || 0) + (Number(item.fixed) || 0) }))
+    .sort((a, b) => b.used - a.used)[0] || { name: "-", used: 0 };
 
   return (
-    <aside className="summary-panel">
-      <div className="summary-title"><Wallet size={18} /> Riepilogo — soldi davvero da gestire</div>
+    <aside className="summary-panel analysis-panel-right">
+      <div className="summary-title"><Sparkles size={18} /> Analisi del mese</div>
 
-      <div className="summary-list">
-        {rows.map(([label, value, caption, highlight]) => (
-          <div className={`summary-row ${highlight ? "highlight" : ""}`} key={label}>
-            <span>{label}</span>
-            <strong className={value < 0 ? "danger" : ""}>{euro(value)}</strong>
-            <small>{caption}</small>
-          </div>
-        ))}
-      </div>
-
-      <div className={`money-hero ${statusClass}`}>
-        <Heart size={25} />
-        <span>Libertà del mese</span>
-        <strong>{euro(result.freeMoney)}</strong>
-        <small>Quello che resta per imprevisti e libertà</small>
-      </div>
-
-      <div className="mini-kpi blue-kpi">
-        <span><Target size={18} /> Previsione fine mese</span>
+      <div className="right-hero">
+        <span>Margine finale previsto</span>
         <strong className={result.forecast < 0 ? "danger" : ""}>{euro(result.forecast)}</strong>
+        <small>Quanto potresti avere dopo budget e rate previste</small>
+      </div>
+
+      <div className="analysis-list">
+        <div className="analysis-row">
+          <span>Rate ancora aperte</span>
+          <strong>{euro(result.fixedToPay)}</strong>
+          <small>Importi con Pagato = No</small>
+        </div>
+        <div className="analysis-row">
+          <span>Categoria più usata</span>
+          <strong>{topCategory.name}</strong>
+          <small>{euro(topCategory.spent)}</small>
+        </div>
+        <div className="analysis-row">
+          <span>Fondo più utilizzato</span>
+          <strong>{topFund.name}</strong>
+          <small>{euro(topFund.used)}</small>
+        </div>
+        <div className="analysis-row">
+          <span>Budget variabile usato</span>
+          <strong>{budgetUsed}%</strong>
+          <ProgressBar spent={result.totalBudgetSpent} budget={result.totalBudget} />
+        </div>
+        <div className="analysis-row">
+          <span>Tasso libertà</span>
+          <strong className={savingRate < 0 ? "danger" : savingRate < 20 ? "attention" : ""}>{savingRate}%</strong>
+          <small>Soldi da gestire rispetto alle entrate</small>
+        </div>
       </div>
 
       <div className={`mini-kpi ${statusClass === "danger" ? "red-kpi" : statusClass === "attention" ? "yellow-kpi" : "green-kpi"}`}>
-        <span><CheckCircle2 size={18} /> Stato mese</span>
+        <span><CheckCircle2 size={18} /> Semaforo mese</span>
         <strong>{result.freeMoney < 0 ? "RISCHIO" : result.freeMoney < 300 ? "ATTENZIONE" : "OK"}</strong>
       </div>
 
@@ -787,7 +792,7 @@ function SummaryPanel({ result }) {
         </div>
       )}
 
-      <div className="quote-card">La disciplina di oggi<br />è la libertà di domani.<br />♡</div>
+      <div className="quote-card compact-quote">La disciplina di oggi<br />è la libertà di domani.<br />♡</div>
     </aside>
   );
 }
