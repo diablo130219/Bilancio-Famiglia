@@ -37,9 +37,9 @@ body {
 }
 
 .app-shell {
-  max-width: 1760px;
+  max-width: 1960px;
   margin: 0 auto;
-  padding: 32px 38px 52px;
+  padding: 24px 44px 44px;
 }
 
 .top-hero {
@@ -47,7 +47,7 @@ body {
   grid-template-columns: 1.1fr 470px 128px 230px;
   gap: 24px;
   align-items: center;
-  margin-bottom: 28px;
+  margin-bottom: 18px;
   position: relative;
 }
 
@@ -117,7 +117,7 @@ body {
 }
 
 .coffee-card {
-  height: 108px;
+  height: 92px;
   display: grid;
   place-items: center;
   color: #7c2d12;
@@ -127,7 +127,7 @@ body {
 }
 
 .sticky-note {
-  padding: 22px 16px;
+  padding: 18px 16px;
   text-align: center;
   color: #7c2d12;
   background: #fce7f3;
@@ -140,7 +140,7 @@ body {
 .reset-month {
   position: absolute;
   right: 0;
-  bottom: -44px;
+  bottom: -36px;
   display: inline-flex;
   gap: 8px;
   align-items: center;
@@ -155,10 +155,10 @@ body {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1.05fr 1.55fr .95fr;
-  gap: 20px;
+  grid-template-columns: 1.15fr 1.75fr 1.05fr;
+  gap: 24px;
   align-items: start;
-  margin-top: 54px;
+  margin-top: 32px;
 }
 
 .panel,
@@ -206,12 +206,12 @@ table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 14px;
+  font-size: 14.5px;
 }
 
 th,
 td {
-  padding: 10px;
+  padding: 11px 12px;
   border-right: 1px solid rgba(207, 227, 242, .75);
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
@@ -423,8 +423,8 @@ tfoot td {
   line-height: 1.9;
 }
 
-.movements-panel { grid-column: 2 / 3; }
-.fixed-panel { grid-column: 1 / 3; }
+.movements-panel { grid-column: 2 / -1; }
+.fixed-panel { grid-column: 1 / -1; }
 
 .add-button {
   margin: 14px;
@@ -492,5 +492,51 @@ tfoot td {
   .reset-month {
     position: static;
     justify-content: center;
+  }
+}
+
+
+/* V3 layout: più largo e fisse/rate più in alto */
+.fixed-panel {
+  margin-top: 0;
+}
+
+.fixed-panel table {
+  font-size: 14px;
+}
+
+.fixed-panel .input {
+  min-width: 120px;
+}
+
+.fixed-panel th,
+.fixed-panel td {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+.summary-panel {
+  min-width: 360px;
+}
+
+.funds-panel,
+.budget-panel,
+.summary-panel {
+  align-self: start;
+}
+
+@media (min-width: 1500px) {
+  .dashboard-grid {
+    grid-template-columns: minmax(470px, 1.2fr) minmax(670px, 1.75fr) minmax(380px, 1.05fr);
+  }
+}
+
+@media (min-width: 1800px) {
+  .app-shell {
+    max-width: 2100px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 540px 760px 430px;
   }
 }

@@ -115,9 +115,9 @@ function App() {
         <BudgetCard data={data} result={result} updateMonth={updateMonth} />
         <SummaryPanel result={result} />
 
+        <FixedCard data={data} result={result} updateMonth={updateMonth} />
         <GuideCard />
         <MovementsCard data={data} updateMonth={updateMonth} />
-        <FixedCard data={data} result={result} updateMonth={updateMonth} />
       </main>
     </div>
   );
