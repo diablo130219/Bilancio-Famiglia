@@ -59,3 +59,10 @@ Modifiche visibili:
 - analisi finanziaria con consiglio del mese
 - riepilogo annuale compatto solo sui mesi usati
 - backup sempre disponibile
+
+
+## V10 NO DUPLICATI
+- Rimosso badge Cloud attivo sovrapposto ad Azzera mese
+- Pannello destro trasformato in Analisi del mese
+- Eliminati doppioni con dashboard alta
+- Margine finale previsto, categoria più usata, fondo più usato, budget usato e tasso libertà
