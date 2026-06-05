@@ -228,7 +228,10 @@ function BudgetCard({ data, result, updateMonth }) {
                 {data.quick[key].amount > 0 && !data.quick[key].source && <small className="warning-inline">Scegli fondo</small>}
               </td>
               <td className="money">{euro(result.budgets[key].spent)}</td>
-              <td className={`money strong ${result.budgets[key].left < 0 ? "danger" : ""}`}>{euro(result.budgets[key].left)}</td>
+              <td className={`money strong ${result.budgets[key].left < 0 ? "danger" : ""}`}>
+                {euro(result.budgets[key].left)}
+                <ProgressBar spent={result.budgets[key].spent} budget={result.budgets[key].budget} />
+              </td>
             </tr>
           ))}
         </tbody>
@@ -295,7 +298,7 @@ function SummaryPanel({ result }) {
 
       <div className={`money-hero ${statusClass}`}>
         <Heart size={25} />
-        <span>Soldi da gestire</span>
+        <span>Libertà del mese</span>
         <strong>{euro(result.freeMoney)}</strong>
         <small>Quello che resta per imprevisti e libertà</small>
       </div>
@@ -444,6 +447,18 @@ function FixedCard({ data, result, updateMonth }) {
         </tfoot>
       </table>
     </section>
+  );
+}
+
+
+function ProgressBar({ spent, budget }) {
+  const percentage = budget > 0 ? Math.min(100, Math.max(0, (spent / budget) * 100)) : 0;
+  const level = percentage >= 90 ? "danger" : percentage >= 70 ? "warn" : "safe";
+
+  return (
+    <div className="progress-wrap" title={`${Math.round(percentage)}% usato`}>
+      <div className={`progress-fill ${level}`} style={{ width: `${percentage}%` }} />
+    </div>
   );
 }
 
