@@ -1769,3 +1769,279 @@ tbody tr:hover td {
     margin: 0 auto;
   }
 }
+
+
+/* V11 WOW UI — backup compatto + grafica premium */
+:root {
+  --wow-shadow: 0 22px 60px rgba(15, 23, 42, .10);
+  --wow-border: rgba(255, 255, 255, .72);
+}
+
+body {
+  background:
+    radial-gradient(circle at 7% 8%, rgba(125, 211, 252, .55) 0 9%, transparent 28%),
+    radial-gradient(circle at 86% 5%, rgba(251, 207, 232, .72) 0 13%, transparent 32%),
+    radial-gradient(circle at 58% 40%, rgba(254, 243, 199, .55) 0 16%, transparent 42%),
+    linear-gradient(115deg, #f4fbff 0%, #fffdf8 45%, #fff0f6 100%);
+  background-attachment: fixed;
+}
+
+.app-shell::before,
+.app-shell::after {
+  content: "";
+  position: fixed;
+  pointer-events: none;
+  z-index: -1;
+  border-radius: 999px;
+  filter: blur(12px);
+  opacity: .55;
+}
+
+.app-shell::before {
+  width: 340px;
+  height: 340px;
+  left: -120px;
+  top: 160px;
+  background: radial-gradient(circle, rgba(14,165,233,.18), transparent 68%);
+}
+
+.app-shell::after {
+  width: 380px;
+  height: 380px;
+  right: -150px;
+  bottom: 60px;
+  background: radial-gradient(circle, rgba(236,72,153,.16), transparent 70%);
+}
+
+.brand-block h1 {
+  background: linear-gradient(135deg, #0b345c, #075985 55%, #be123c);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.period-pill,
+.manager-card,
+.control-main,
+.control-side,
+.panel,
+.summary-panel,
+.guide-panel,
+.insights-panel,
+.goals-panel,
+.calendar-panel,
+.annual-mini-panel,
+.financial-coach-panel,
+.cloud-tool-card {
+  background: rgba(255, 255, 255, .74) !important;
+  border: 1px solid rgba(255, 255, 255, .78) !important;
+  box-shadow: var(--wow-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.manager-card,
+.control-mini,
+.strip-card,
+.cloud-tool-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.manager-card::before,
+.control-mini::before,
+.strip-card::before,
+.cloud-tool-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255,255,255,.48), transparent 38%, rgba(255,255,255,.22));
+  pointer-events: none;
+}
+
+.manager-card,
+.cloud-tool-card,
+.control-mini,
+.strip-card,
+.panel,
+.summary-panel {
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.manager-card:hover,
+.cloud-tool-card:hover,
+.control-mini:hover,
+.strip-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 28px 70px rgba(15, 23, 42, .14);
+}
+
+.panel-title {
+  position: relative;
+  overflow: hidden;
+}
+
+.panel-title::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent);
+  transform: skewX(-16deg);
+  animation: titleShine 5.8s ease-in-out infinite;
+}
+
+@keyframes titleShine {
+  0%, 72% { left: -80%; }
+  100% { left: 130%; }
+}
+
+.panel-title.green {
+  background: linear-gradient(135deg, #059669, #16a34a 48%, #047857) !important;
+}
+
+.panel-title.rose {
+  background: linear-gradient(135deg, #fb7185, #e11d48 48%, #be123c) !important;
+}
+
+.panel-title.orange {
+  background: linear-gradient(135deg, #fb923c, #f97316 45%, #c2410c) !important;
+}
+
+.panel-title.blue,
+.summary-title {
+  background: linear-gradient(135deg, #0ea5e9, #0e63b6 46%, #075985) !important;
+}
+
+.input {
+  background: linear-gradient(180deg, #fffbe8, #fff7cc);
+  border-color: rgba(234, 179, 8, .38);
+}
+
+.input:focus {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 4px rgba(168, 85, 247, .14), inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+.money-hero,
+.right-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.money-hero::after,
+.right-hero::after {
+  content: "";
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  right: -34px;
+  top: -44px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.48);
+}
+
+.progress-fill,
+.wide-progress > div,
+.goal-progress > div {
+  box-shadow: 0 0 12px rgba(14, 165, 233, .25);
+}
+
+.backup-button,
+.compact-backup {
+  grid-column: auto !important;
+  min-height: 38px !important;
+  width: fit-content !important;
+  justify-self: end;
+  align-self: center;
+  padding: 9px 13px !important;
+  border-radius: 999px !important;
+  font-size: 12px !important;
+  letter-spacing: .1px;
+  background: linear-gradient(135deg, #0f766e, #0e63b6) !important;
+  box-shadow: 0 10px 22px rgba(14, 99, 182, .16) !important;
+}
+
+.control-side {
+  grid-template-columns: 1fr 1fr auto !important;
+  align-items: stretch;
+}
+
+.control-mini {
+  min-height: 76px;
+}
+
+.cloud-tool-card {
+  min-height: 78px;
+}
+
+.cloud-tool-card strong {
+  font-size: 16px !important;
+}
+
+.cloud-tool-card small {
+  font-size: 11px;
+}
+
+.cloud-tool-card svg {
+  width: 40px !important;
+  height: 40px !important;
+  padding: 10px !important;
+}
+
+.top-hero {
+  position: relative;
+}
+
+.reset-month {
+  z-index: 5;
+  right: 4px !important;
+  bottom: -32px !important;
+  background: linear-gradient(135deg, #fff1f2, #ffe4e6) !important;
+  border: 1px solid rgba(244, 63, 94, .20) !important;
+  box-shadow: 0 10px 28px rgba(190, 18, 60, .12) !important;
+}
+
+.sticky-note {
+  background:
+    linear-gradient(160deg, rgba(252,231,243,.95), rgba(255,241,247,.88)),
+    radial-gradient(circle at 15% 10%, rgba(255,255,255,.85), transparent 35%);
+}
+
+.coffee-card {
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255,255,255,.96), transparent 32%),
+    linear-gradient(180deg, #ffffff, #f8fbff) !important;
+}
+
+.status-badge.paid {
+  box-shadow: 0 7px 18px rgba(22, 163, 74, .10);
+}
+
+.status-badge.pending {
+  box-shadow: 0 7px 18px rgba(249, 115, 22, .10);
+}
+
+.alert-card {
+  background: linear-gradient(160deg, #fff7ed, #fffbeb) !important;
+}
+
+.quote-card,
+.compact-quote {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255,255,255,.75), transparent 28%),
+    linear-gradient(160deg, #f6ecff, #fff7fb) !important;
+}
+
+@media (max-width: 1300px) {
+  .control-side {
+    grid-template-columns: 1fr !important;
+  }
+
+  .backup-button,
+  .compact-backup {
+    justify-self: stretch;
+    width: 100% !important;
+  }
+}

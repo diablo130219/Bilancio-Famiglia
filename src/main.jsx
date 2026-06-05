@@ -342,9 +342,9 @@ function CloudToolsPanel({ state, result }) {
           </div>
         </div>
 
-        <button className="backup-button" onClick={() => downloadJsonBackup(state)}>
-          <Download size={17} />
-          Scarica backup
+        <button className="backup-button compact-backup" onClick={() => downloadJsonBackup(state)} title="Scarica backup JSON">
+          <Download size={16} />
+          Backup
         </button>
       </div>
     </section>
@@ -1108,7 +1108,7 @@ function downloadJsonBackup(state) {
   const payload = {
     exportedAt: new Date().toISOString(),
     app: "Bilancio Famiglia Premium",
-    version: "V8 Cloud Plus",
+    version: "V11 Wow UI",
     data: state
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
