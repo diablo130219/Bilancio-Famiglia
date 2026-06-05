@@ -288,43 +288,53 @@ function Header({ month, setMonth, year, updateYear, resetCurrentMonth, cloudSta
 
 function CloudToolsPanel({ state, result }) {
   const annual = calculateAnnualStats(state);
+  const goals = calculateGoalsTotal(state);
+  const monthOut = (result.totalBudgetSpent || 0) + (result.fixedPaid || 0);
+  const goalPercent = goals.target > 0 ? Math.min(100, Math.round((goals.current / goals.target) * 100)) : 0;
+
   return (
-    <section className="cloud-tools-panel">
-      <div className="cloud-tool-card">
-        <DatabaseZap size={22} />
-        <div>
-          <span>Cloud Supabase</span>
-          <strong>Sincronizzazione attiva</strong>
-          <small>Dati disponibili da PC, telefono e lavoro</small>
-        </div>
+    <section className="control-center-panel">
+      <div className="control-card income">
+        <div className="control-icon"><Wallet size={22} /></div>
+        <span>Entrate mese</span>
+        <strong>{euro(result.totalInitial)}</strong>
+        <small>Fondi iniziali disponibili</small>
       </div>
 
-      <div className="cloud-tool-card">
-        <ShieldCheck size={22} />
-        <div>
-          <span>Backup</span>
-          <strong>Esporta dati</strong>
-          <small>Scarica una copia JSON del bilancio</small>
-        </div>
-        <button className="mini-action" onClick={() => downloadJsonBackup(state)}>Scarica</button>
+      <div className="control-card expense">
+        <div className="control-icon"><TrendingUp size={22} /></div>
+        <span>Uscite già usate</span>
+        <strong>{euro(monthOut)}</strong>
+        <small>Variabili + fisse pagate</small>
       </div>
 
-      <div className="cloud-tool-card">
-        <BarChart3 size={22} />
-        <div>
-          <span>Anno</span>
-          <strong>{euro(annual.totalFree)}</strong>
-          <small>Somma soldi da gestire sui mesi</small>
-        </div>
+      <div className={`control-card saving ${result.freeMoney < 0 ? "bad" : result.freeMoney < 300 ? "warn" : "good"}`}>
+        <div className="control-icon"><Sparkles size={22} /></div>
+        <span>Risparmio libero</span>
+        <strong>{euro(result.freeMoney)}</strong>
+        <small>Soldi da gestire</small>
       </div>
 
-      <div className="cloud-tool-card">
-        <Trophy size={22} />
-        <div>
-          <span>Mese migliore</span>
-          <strong>{annual.best?.month || "-"}</strong>
-          <small>{euro(annual.best?.free || 0)}</small>
-        </div>
+      <div className="control-card goal">
+        <div className="control-icon"><Target size={22} /></div>
+        <span>Obiettivo mese</span>
+        <strong>{goals.target > 0 ? `${goalPercent}%` : "0%"}</strong>
+        <small>{euro(goals.current)} / {euro(goals.target)}</small>
+        <div className="tiny-progress"><div style={{ width: `${goalPercent}%` }} /></div>
+      </div>
+
+      <div className="control-card cloud">
+        <div className="control-icon"><DatabaseZap size={22} /></div>
+        <span>Cloud</span>
+        <strong>Sincronizzato</strong>
+        <small>PC, telefono e lavoro</small>
+      </div>
+
+      <div className="control-card export">
+        <div className="control-icon"><ShieldCheck size={22} /></div>
+        <span>Backup</span>
+        <strong>Esporta dati</strong>
+        <button className="mini-action" onClick={() => downloadJsonBackup(state)}>Scarica JSON</button>
       </div>
     </section>
   );
@@ -332,19 +342,42 @@ function CloudToolsPanel({ state, result }) {
 
 function AnnualMiniPanel({ state }) {
   const annual = calculateAnnualStats(state);
+  const visibleRows = annual.rows.filter((row) => row.initial !== 0 || row.spent !== 0 || row.free !== 0 || row.fixedToPay !== 0);
+  const rowsToShow = visibleRows.length ? visibleRows : annual.rows;
+  const maxFree = Math.max(1, ...annual.rows.map((row) => Math.abs(row.free || 0)));
+
   return (
-    <section className="annual-mini-panel">
+    <section className="annual-mini-panel annual-pro">
       <div className="section-heading">
         <BarChart3 size={20} />
         <div>
           <h3>Riepilogo annuale cloud</h3>
-          <p>Primo storico automatico dei mesi salvati</p>
+          <p>Storico automatico, migliori mesi e andamento dei soldi da gestire</p>
         </div>
       </div>
 
-      <div className="annual-table">
-        {annual.rows.map((row) => (
-          <div className="annual-row" key={row.month}>
+      <div className="annual-kpis">
+        <div><span>Mesi compilati</span><strong>{annual.activeMonths}</strong></div>
+        <div><span>Totale soldi da gestire</span><strong>{euro(annual.totalFree)}</strong></div>
+        <div><span>Mese migliore</span><strong>{annual.best?.month || "-"}</strong><small>{euro(annual.best?.free || 0)}</small></div>
+        <div><span>Mese più critico</span><strong>{annual.worst?.month || "-"}</strong><small>{euro(annual.worst?.free || 0)}</small></div>
+      </div>
+
+      <div className="annual-chart">
+        {annual.rows.map((row) => {
+          const height = Math.max(8, Math.round((Math.abs(row.free || 0) / maxFree) * 90));
+          return (
+            <div className="annual-bar-item" key={row.month} title={`${row.month}: ${euro(row.free)}`}>
+              <div className="bar-track"><div className={row.free < 0 ? "bar negative" : "bar positive"} style={{ height: `${height}%` }} /></div>
+              <span>{row.month.slice(0,3)}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="annual-table compact">
+        {rowsToShow.map((row) => (
+          <div className={`annual-row ${row.free < 0 ? "is-negative" : ""}`} key={row.month}>
             <b>{row.month}</b>
             <span>Entrate {euro(row.initial)}</span>
             <span>Speso {euro(row.spent)}</span>
@@ -355,7 +388,6 @@ function AnnualMiniPanel({ state }) {
     </section>
   );
 }
-
 
 function ManagerDashboard({ result, data, month }) {
   const budgetUsed = result.totalBudget > 0 ? Math.min(999, Math.round((result.totalBudgetSpent / result.totalBudget) * 100)) : 0;
@@ -1007,6 +1039,16 @@ function downloadJsonBackup(state) {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+function calculateGoalsTotal(state) {
+  const currentMonth = localStorage.getItem(MONTH_KEY) || "Giugno";
+  const goals = state?.[currentMonth]?.goals || [];
+  return goals.reduce((acc, goal) => {
+    acc.current += Number(goal.current) || 0;
+    acc.target += Number(goal.target) || 0;
+    return acc;
+  }, { current: 0, target: 0 });
 }
 
 function calculateAnnualStats(state) {
