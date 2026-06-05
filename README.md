@@ -48,3 +48,14 @@ Migliorie:
 Variabili Render:
 VITE_SUPABASE_URL
 VITE_SUPABASE_ANON_KEY
+
+
+## V9 REALE
+
+Modifiche visibili:
+- nuovo Centro controllo mese
+- rimosso blocco "Salvataggio automatico" inutile
+- budget strip con spese variabili e residuo
+- analisi finanziaria con consiglio del mese
+- riepilogo annuale compatto solo sui mesi usati
+- backup sempre disponibile
