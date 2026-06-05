@@ -4,7 +4,7 @@ import {
   PiggyBank, Wallet, ShoppingCart, ReceiptText, NotebookPen, Target,
   CheckCircle2, Trash2, Plus, Heart, Coffee, Landmark, Briefcase,
   Users, Baby, Home, HandCoins, Star, Fuel, Gift, Info, AlertTriangle,
-  RotateCcw, Download
+  RotateCcw, Download, PieChart, CalendarCheck, TrendingUp, Sparkles, Trophy
 } from "lucide-react";
 import "./style.css";
 
@@ -51,7 +51,10 @@ const emptyMonth = () => ({
   budgets: Object.fromEntries(CATEGORIES.map(({ key }) => [key, 0])),
   quick: Object.fromEntries(CATEGORIES.map(({ key }) => [key, { amount: 0, source: "" }])),
   movements: [],
-  fixed: Object.fromEntries(FIXED_ITEMS.map((name) => [name, { amount: 0, source: "", paid: "No" }]))
+  fixed: Object.fromEntries(FIXED_ITEMS.map((name) => [name, { amount: 0, source: "", paid: "No" }])),
+  goals: [
+    { id: crypto.randomUUID(), name: "Obiettivo risparmio", target: 0, current: 0 }
+  ]
 });
 
 const initialState = () => Object.fromEntries(MONTHS.map((m) => [m, emptyMonth()]));
@@ -110,6 +113,8 @@ function App() {
         resetCurrentMonth={resetCurrentMonth}
       />
 
+      <ManagerDashboard result={result} data={data} month={month} />
+
       <main className="dashboard-grid">
         <FundsCard data={data} result={result} updateMonth={updateMonth} />
         <BudgetCard data={data} result={result} updateMonth={updateMonth} />
@@ -118,6 +123,9 @@ function App() {
         <FixedCard data={data} result={result} updateMonth={updateMonth} />
         <GuideCard />
         <MovementsCard data={data} updateMonth={updateMonth} />
+        <InsightsPanel data={data} result={result} />
+        <GoalsPanel data={data} updateMonth={updateMonth} />
+        <CalendarPanel data={data} />
       </main>
     </div>
   );
@@ -155,6 +163,164 @@ function Header({ month, setMonth, year, updateYear, resetCurrentMonth }) {
         <RotateCcw size={17} /> Azzera mese
       </button>
     </header>
+  );
+}
+
+
+function ManagerDashboard({ result, data, month }) {
+  const budgetUsed = result.totalBudget > 0 ? Math.min(999, Math.round((result.totalBudgetSpent / result.totalBudget) * 100)) : 0;
+  const paidRatePercent = result.fixedTotal > 0 ? Math.round((result.fixedPaid / result.fixedTotal) * 100) : 0;
+  const daysLeft = getDaysLeftInMonth(data.year, month);
+  const status = result.freeMoney < 0 ? "Rischio" : result.freeMoney < 300 ? "Attenzione" : "Ok";
+
+  return (
+    <section className="manager-dashboard">
+      <ManagerCard icon={<Wallet />} label="Disponibilità reale" value={euro(result.freeMoney)} tone={result.freeMoney < 0 ? "red" : result.freeMoney < 300 ? "yellow" : "green"} />
+      <ManagerCard icon={<CalendarCheck />} label="Giorni a fine mese" value={daysLeft} suffix="giorni" tone="blue" />
+      <ManagerCard icon={<TrendingUp />} label="Budget consumato" value={`${budgetUsed}%`} tone={budgetUsed >= 90 ? "red" : budgetUsed >= 70 ? "yellow" : "green"} />
+      <ManagerCard icon={<ReceiptText />} label="Rate da pagare" value={euro(result.fixedToPay)} tone={result.fixedToPay > 0 ? "orange" : "green"} />
+      <ManagerCard icon={<Sparkles />} label="Rate pagate" value={`${paidRatePercent}%`} tone="purple" />
+      <ManagerCard icon={<CheckCircle2 />} label="Stato mese" value={status} tone={status === "Rischio" ? "red" : status === "Attenzione" ? "yellow" : "green"} />
+    </section>
+  );
+}
+
+function ManagerCard({ icon, label, value, suffix, tone }) {
+  return (
+    <div className={`manager-card ${tone}`}>
+      <div className="manager-icon">{icon}</div>
+      <div>
+        <span>{label}</span>
+        <strong>{value}</strong>
+        {suffix && <small>{suffix}</small>}
+      </div>
+    </div>
+  );
+}
+
+function InsightsPanel({ data, result }) {
+  const categories = CATEGORIES.map(({ key }) => ({
+    key,
+    spent: result.budgets[key]?.spent || 0,
+    budget: result.budgets[key]?.budget || 0
+  })).filter((item) => item.spent > 0 || item.budget > 0);
+
+  const maxSpent = Math.max(1, ...categories.map((item) => item.spent));
+  const top = [...categories].sort((a, b) => b.spent - a.spent)[0];
+
+  return (
+    <section className="insights-panel">
+      <div className="section-heading">
+        <PieChart size={20} />
+        <div>
+          <h3>Analisi consumi</h3>
+          <p>Capisci subito dove stanno andando i soldi</p>
+        </div>
+      </div>
+
+      <div className="category-bars">
+        {categories.length === 0 && <div className="empty-state">Nessuna spesa inserita.</div>}
+        {categories.map((item) => (
+          <div className="category-bar-row" key={item.key}>
+            <div className="category-bar-title">
+              <span>{item.key}</span>
+              <strong>{euro(item.spent)}</strong>
+            </div>
+            <div className="wide-progress">
+              <div style={{ width: `${Math.min(100, (item.spent / maxSpent) * 100)}%` }} />
+            </div>
+            <small>{item.budget > 0 ? `${Math.round((item.spent / item.budget) * 100)}% del budget` : "Budget non impostato"}</small>
+          </div>
+        ))}
+      </div>
+
+      {top && (
+        <div className="smart-tip">
+          <Trophy size={18} />
+          <span>Categoria più alta: <b>{top.key}</b> con {euro(top.spent)}.</span>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function GoalsPanel({ data, updateMonth }) {
+  const addGoal = () => updateMonth((d) => {
+    d.goals.push({ id: crypto.randomUUID(), name: "Nuovo obiettivo", target: 0, current: 0 });
+  });
+
+  return (
+    <section className="goals-panel">
+      <div className="section-heading">
+        <Target size={20} />
+        <div>
+          <h3>Obiettivi risparmio</h3>
+          <p>Facoltativo: puoi lasciarli a zero</p>
+        </div>
+      </div>
+
+      <div className="goals-list">
+        {data.goals.map((goal) => {
+          const percentage = goal.target > 0 ? Math.min(100, Math.round((goal.current / goal.target) * 100)) : 0;
+          return (
+            <div className="goal-card" key={goal.id}>
+              <div className="goal-fields">
+                <TextField value={goal.name} onChange={(value) => updateMonth((d) => findGoal(d, goal.id).name = value)} />
+                <NumberField value={goal.current} onChange={(value) => updateMonth((d) => findGoal(d, goal.id).current = value)} />
+                <NumberField value={goal.target} onChange={(value) => updateMonth((d) => findGoal(d, goal.id).target = value)} />
+                <button className="icon-button" onClick={() => updateMonth((d) => d.goals = d.goals.filter((g) => g.id !== goal.id))}>
+                  <Trash2 size={16} />
+                </button>
+              </div>
+              <div className="goal-meta">
+                <span>{euro(goal.current)} / {euro(goal.target)}</span>
+                <b>{percentage}%</b>
+              </div>
+              <div className="wide-progress goal-progress">
+                <div style={{ width: `${percentage}%` }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <button className="add-button goal-add" onClick={addGoal}><Plus size={18} /> Aggiungi obiettivo</button>
+    </section>
+  );
+}
+
+function CalendarPanel({ data }) {
+  const events = [
+    ...data.movements.map((m) => ({ date: m.date, title: m.category, amount: m.amount, source: m.source, type: "spesa" })),
+    ...Object.entries(data.fixed)
+      .filter(([, item]) => isPaid(item.paid) && Number(item.amount) > 0)
+      .map(([name, item]) => ({ date: "Pagata", title: name, amount: item.amount, source: item.source, type: "fissa" }))
+  ];
+
+  return (
+    <section className="calendar-panel">
+      <div className="section-heading">
+        <CalendarCheck size={20} />
+        <div>
+          <h3>Calendario movimenti</h3>
+          <p>Vista rapida delle uscite inserite</p>
+        </div>
+      </div>
+
+      <div className="timeline">
+        {events.length === 0 && <div className="empty-state">Nessun movimento inserito.</div>}
+        {events.slice(0, 12).map((event, index) => (
+          <div className={`timeline-item ${event.type}`} key={`${event.title}-${index}`}>
+            <span>{event.date}</span>
+            <div>
+              <b>{event.title}</b>
+              <small>{event.source || "Fonte non scelta"}</small>
+            </div>
+            <strong>{euro(event.amount)}</strong>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -581,6 +747,19 @@ function calculateMonth(data) {
     forecast,
     missingSources
   };
+}
+
+function findGoal(data, id) {
+  return data.goals.find((goal) => goal.id === id);
+}
+
+function getDaysLeftInMonth(year, monthName) {
+  const monthIndex = MONTHS.indexOf(monthName);
+  const now = new Date();
+  const targetYear = Number(year) || now.getFullYear();
+  const end = new Date(targetYear, monthIndex + 1, 0);
+  const basis = now.getMonth() === monthIndex && now.getFullYear() === targetYear ? now : new Date(targetYear, monthIndex, 1);
+  return Math.max(0, Math.ceil((end - basis) / (1000 * 60 * 60 * 24)));
 }
 
 function sumObject(object, key) {
