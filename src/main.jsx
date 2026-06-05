@@ -53,15 +53,55 @@ const emptyMonth = () => ({
   movements: [],
   fixed: Object.fromEntries(FIXED_ITEMS.map((name) => [name, { amount: 0, source: "", paid: "No" }])),
   goals: [
-    { id: crypto.randomUUID(), name: "Obiettivo risparmio", target: 0, current: 0 }
+    { id: makeId(), name: "Obiettivo risparmio", target: 0, current: 0 }
   ]
 });
 
 const initialState = () => Object.fromEntries(MONTHS.map((m) => [m, emptyMonth()]));
 
+const makeId = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return makeId();
+  return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
+const normalizeMonth = (monthData) => {
+  const base = emptyMonth();
+  return {
+    ...base,
+    ...monthData,
+    funds: { ...base.funds, ...(monthData?.funds || {}) },
+    budgets: { ...base.budgets, ...(monthData?.budgets || {}) },
+    quick: { ...base.quick, ...(monthData?.quick || {}) },
+    movements: (monthData?.movements || []).map((item) => ({
+      id: item.id || makeId(),
+      date: item.date || "",
+      category: item.category || CATEGORIES[0].key,
+      amount: Number(item.amount) || 0,
+      source: item.source || "",
+      note: item.note || ""
+    })),
+    fixed: { ...base.fixed, ...(monthData?.fixed || {}) },
+    goals: (monthData?.goals || base.goals).map((goal) => ({
+      id: goal.id || makeId(),
+      name: goal.name || "Obiettivo risparmio",
+      target: Number(goal.target) || 0,
+      current: Number(goal.current) || 0
+    }))
+  };
+};
+
+const normalizeState = (saved) => {
+  const base = initialState();
+  MONTHS.forEach((m) => {
+    base[m] = normalizeMonth(saved?.[m]);
+  });
+  return base;
+};
+
 const loadState = () => {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || initialState();
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    return normalizeState(saved);
   } catch {
     return initialState();
   }
@@ -246,7 +286,7 @@ function InsightsPanel({ data, result }) {
 
 function GoalsPanel({ data, updateMonth }) {
   const addGoal = () => updateMonth((d) => {
-    d.goals.push({ id: crypto.randomUUID(), name: "Nuovo obiettivo", target: 0, current: 0 });
+    d.goals.push({ id: makeId(), name: "Nuovo obiettivo", target: 0, current: 0 });
   });
 
   return (
@@ -512,7 +552,7 @@ function GuideCard() {
 function MovementsCard({ data, updateMonth }) {
   const addMovement = () => updateMonth((d) => {
     d.movements.push({
-      id: crypto.randomUUID(),
+      id: makeId(),
       date: new Date().toLocaleDateString("it-IT"),
       category: CATEGORIES[0].key,
       amount: 0,
