@@ -1,21 +1,15 @@
-# Bilancio Famiglia React
+# Bilancio Famiglia React V2
 
-Web app React + Vite pronta per Render.
+Versione migliorata:
+- tutti gli importi partono da zero
+- tutte le spese sono modificabili
+- salvataggio automatico
+- mesi indipendenti
+- avviso se una spesa/rata pagata non ha fonte
+- stati colorati
 
 ## Render
 
-Crea un nuovo Web Service o Static Site da repository GitHub.
-
-Impostazioni consigliate:
-
+Static Site:
 - Build Command: `npm install && npm run build`
 - Publish Directory: `dist`
-
-Se Render ti chiede runtime, usa Node.
-
-## Locale
-
-```bash
-npm install
-npm run dev
-```
