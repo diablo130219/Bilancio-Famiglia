@@ -1187,3 +1187,40 @@ tbody tr:hover td {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Supabase cloud badge */
+.cloud-badge {
+  position: absolute;
+  right: 150px;
+  bottom: -36px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-weight: 900;
+  box-shadow: 0 10px 24px rgba(15,23,42,.08);
+}
+
+.cloud-badge.ok {
+  color: #047857;
+  background: #dcfce7;
+}
+
+.cloud-badge.local {
+  color: #075985;
+  background: #e0f2fe;
+}
+
+.cloud-badge.error {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+@media (max-width: 1200px) {
+  .cloud-badge {
+    position: static;
+    justify-content: center;
+  }
+}

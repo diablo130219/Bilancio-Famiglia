@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { createClient } from "@supabase/supabase-js";
 import {
   PiggyBank, Wallet, ShoppingCart, ReceiptText, NotebookPen, Target,
   CheckCircle2, Trash2, Plus, Heart, Coffee, Landmark, Briefcase,
@@ -10,6 +11,15 @@ import "./style.css";
 
 const STORAGE_KEY = "bilancio-famiglia-react-v2";
 const MONTH_KEY = "bilancio-famiglia-month-v2";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+const CLOUD_ROW_MONTH = "APP_STATE";
+const CLOUD_ROW_YEAR = 2026;
+
 
 const MONTHS = [
   "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
@@ -110,18 +120,78 @@ const loadState = () => {
 function App() {
   const [state, setState] = useState(loadState);
   const [month, setMonth] = useState(localStorage.getItem(MONTH_KEY) || "Giugno");
+  const [cloudStatus, setCloudStatus] = useState(supabase ? "Connessione cloud..." : "Solo locale");
+  const cloudReadyRef = useRef(false);
   const data = state[month];
 
-  const saveNext = (next, selectedMonth = month) => {
+  const saveLocal = (next, selectedMonth = month) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     localStorage.setItem(MONTH_KEY, selectedMonth);
   };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCloud = async () => {
+      if (!supabase) {
+        cloudReadyRef.current = true;
+        return;
+      }
+
+      try {
+        const { data: row, error } = await supabase
+          .from("bilanci")
+          .select("dati")
+          .eq("mese", CLOUD_ROW_MONTH)
+          .eq("anno", CLOUD_ROW_YEAR)
+          .limit(1)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (!cancelled && row?.dati) {
+          const cloudState = normalizeState(row.dati);
+          setState(cloudState);
+          saveLocal(cloudState);
+        }
+
+        if (!cancelled) {
+          cloudReadyRef.current = true;
+          setCloudStatus("Cloud attivo");
+        }
+      } catch (error) {
+        console.error("Errore caricamento Supabase:", error);
+        if (!cancelled) {
+          cloudReadyRef.current = true;
+          setCloudStatus("Errore cloud");
+        }
+      }
+    };
+
+    loadCloud();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    saveLocal(state, month);
+
+    if (!supabase || !cloudReadyRef.current) return;
+
+    const timeout = setTimeout(() => {
+      saveStateToCloud(state, setCloudStatus);
+    }, 650);
+
+    return () => clearTimeout(timeout);
+  }, [state, month]);
 
   const updateMonth = (updater) => {
     setState((previous) => {
       const next = structuredClone(previous);
       updater(next[month]);
-      saveNext(next);
+      saveLocal(next);
       return next;
     });
   };
@@ -136,7 +206,7 @@ function App() {
     setState((previous) => {
       const next = structuredClone(previous);
       next[month] = emptyMonth();
-      saveNext(next);
+      saveLocal(next);
       return next;
     });
   };
@@ -151,6 +221,7 @@ function App() {
         year={data.year}
         updateYear={(year) => updateMonth((d) => (d.year = year))}
         resetCurrentMonth={resetCurrentMonth}
+        cloudStatus={cloudStatus}
       />
 
       <ManagerDashboard result={result} data={data} month={month} />
@@ -171,7 +242,7 @@ function App() {
   );
 }
 
-function Header({ month, setMonth, year, updateYear, resetCurrentMonth }) {
+function Header({ month, setMonth, year, updateYear, resetCurrentMonth, cloudStatus }) {
   return (
     <header className="top-hero">
       <section className="brand-block">
@@ -198,6 +269,10 @@ function Header({ month, setMonth, year, updateYear, resetCurrentMonth }) {
       <section className="sticky-note">
         Piccoli passi<br />ogni giorno<br />portano a grandi<br />risultati ♡
       </section>
+
+      <div className={`cloud-badge ${cloudStatus === "Cloud attivo" ? "ok" : cloudStatus === "Errore cloud" ? "error" : "local"}`}>
+        {cloudStatus}
+      </div>
 
       <button className="reset-month" onClick={resetCurrentMonth}>
         <RotateCcw size={17} /> Azzera mese
@@ -791,6 +866,40 @@ function calculateMonth(data) {
 
 function findGoal(data, id) {
   return data.goals.find((goal) => goal.id === id);
+}
+
+async function saveStateToCloud(state, setCloudStatus) {
+  try {
+    setCloudStatus("Salvataggio cloud...");
+
+    const payload = {
+      mese: CLOUD_ROW_MONTH,
+      anno: CLOUD_ROW_YEAR,
+      dati: state,
+      updated_at: new Date().toISOString()
+    };
+
+    const { data: existing, error: selectError } = await supabase
+      .from("bilanci")
+      .select("id")
+      .eq("mese", CLOUD_ROW_MONTH)
+      .eq("anno", CLOUD_ROW_YEAR)
+      .limit(1)
+      .maybeSingle();
+
+    if (selectError) throw selectError;
+
+    const response = existing?.id
+      ? await supabase.from("bilanci").update(payload).eq("id", existing.id)
+      : await supabase.from("bilanci").insert(payload);
+
+    if (response.error) throw response.error;
+
+    setCloudStatus("Cloud attivo");
+  } catch (error) {
+    console.error("Errore salvataggio Supabase:", error);
+    setCloudStatus("Errore cloud");
+  }
 }
 
 function getDaysLeftInMonth(year, monthName) {
