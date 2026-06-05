@@ -1,30 +1,15 @@
 import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
-  PiggyBank,
-  Wallet,
-  ShoppingCart,
-  ReceiptText,
-  NotebookPen,
-  Target,
-  CheckCircle2,
-  Trash2,
-  Plus,
-  CalendarDays,
-  Heart,
-  Coffee,
-  Landmark,
-  Briefcase,
-  Users,
-  Baby,
-  Home,
-  HandCoins,
-  Star,
-  Fuel,
-  Gift,
-  Info
+  PiggyBank, Wallet, ShoppingCart, ReceiptText, NotebookPen, Target,
+  CheckCircle2, Trash2, Plus, Heart, Coffee, Landmark, Briefcase,
+  Users, Baby, Home, HandCoins, Star, Fuel, Gift, Info, AlertTriangle,
+  RotateCcw, Download
 } from "lucide-react";
 import "./style.css";
+
+const STORAGE_KEY = "bilancio-famiglia-react-v2";
+const MONTH_KEY = "bilancio-famiglia-month-v2";
 
 const MONTHS = [
   "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
@@ -52,162 +37,78 @@ const CATEGORIES = [
 ];
 
 const FIXED_ITEMS = [
-  ["Findomestic", 150],
-  ["Nintendo + Scopa elettrica", 45],
-  ["Netflix", 7],
-  ["Tim Vision", 35],
-  ["Wind Fisso", 24],
-  ["Mutuo", 100],
-  ["Garage", 50],
-  ["PS Store", 9],
-  ["Wind Mobile", 20],
-  ["Enel", 0],
-  ["Gas", 0],
-  ["Gori", 140],
-  ["Altro finanziamento", 0],
-  ["Altro abbonamento", 0]
+  "Findomestic", "Nintendo + Scopa elettrica", "Netflix", "Tim Vision",
+  "Wind Fisso", "Mutuo", "Garage", "PS Store", "Wind Mobile",
+  "Enel", "Gas", "Gori", "Altro finanziamento", "Altro abbonamento"
 ];
 
 const euro = (value) =>
-  (Number(value) || 0).toLocaleString("it-IT", {
-    style: "currency",
-    currency: "EUR"
-  });
+  (Number(value) || 0).toLocaleString("it-IT", { style: "currency", currency: "EUR" });
 
-const createMonth = () => ({
+const emptyMonth = () => ({
   year: 2026,
   funds: Object.fromEntries(FUNDS.map(({ key }) => [key, 0])),
-  budgets: {
-    "Alimenti + prodotti casa": 600,
-    Benzina: 80,
-    "Paghetta Angelo": 50,
-    Sfizi: 100,
-    Deposito: 0,
-    "Altro variabile": 0
-  },
+  budgets: Object.fromEntries(CATEGORIES.map(({ key }) => [key, 0])),
   quick: Object.fromEntries(CATEGORIES.map(({ key }) => [key, { amount: 0, source: "" }])),
   movements: [],
-  fixed: Object.fromEntries(
-    FIXED_ITEMS.map(([name, amount]) => [name, { amount, source: "", paid: "No" }])
-  )
+  fixed: Object.fromEntries(FIXED_ITEMS.map((name) => [name, { amount: 0, source: "", paid: "No" }]))
 });
 
-const createInitialState = () => {
-  const state = Object.fromEntries(MONTHS.map((m) => [m, createMonth()]));
-
-  state.Giugno.funds = {
-    "Residuo banca": 320,
-    Stipendio: 0,
-    Mantenimento: 500,
-    "Assegno unico": 200,
-    Giulia: 200,
-    Casa: 300,
-    Tasca: 25,
-    Extra: 0
-  };
-
-  state.Giugno.quick["Alimenti + prodotti casa"] = {
-    amount: 20,
-    source: "Residuo banca"
-  };
-
-  state.Giugno.movements = [
-    {
-      id: crypto.randomUUID(),
-      date: "04/06/2026",
-      category: "Alimenti + prodotti casa",
-      amount: 100,
-      source: "Residuo banca",
-      note: "Spesa settimanale"
-    },
-    {
-      id: crypto.randomUUID(),
-      date: "04/06/2026",
-      category: "Alimenti + prodotti casa",
-      amount: 20,
-      source: "Residuo banca",
-      note: "Pane e frutta"
-    }
-  ];
-
-  state.Giugno.fixed.Findomestic = { amount: 150, source: "Casa", paid: "Sì" };
-  state.Giugno.fixed["Nintendo + Scopa elettrica"].paid = "Sì";
-  state.Giugno.fixed.Netflix.paid = "Sì";
-  state.Giugno.fixed.Garage.paid = "Sì";
-  state.Giugno.fixed["Wind Mobile"].paid = "Sì";
-
-  return state;
-};
+const initialState = () => Object.fromEntries(MONTHS.map((m) => [m, emptyMonth()]));
 
 const loadState = () => {
   try {
-    return JSON.parse(localStorage.getItem("bilancio-famiglia-react")) || createInitialState();
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || initialState();
   } catch {
-    return createInitialState();
+    return initialState();
   }
 };
 
-function NumberField({ value, onChange }) {
-  return (
-    <input
-      className="input number"
-      type="number"
-      step="0.01"
-      value={Number(value) || 0}
-      onChange={(event) => onChange(Number(event.target.value) || 0)}
-    />
-  );
-}
-
-function TextField({ value, onChange, placeholder = "" }) {
-  return (
-    <input
-      className="input"
-      value={value || ""}
-      placeholder={placeholder}
-      onChange={(event) => onChange(event.target.value)}
-    />
-  );
-}
-
-function SelectField({ value, onChange, options, placeholder = "Scegli" }) {
-  return (
-    <select className="input select" value={value || ""} onChange={(event) => onChange(event.target.value)}>
-      <option value="">{placeholder}</option>
-      {options.map((option) => (
-        <option value={option} key={option}>
-          {option}
-        </option>
-      ))}
-    </select>
-  );
-}
-
 function App() {
   const [state, setState] = useState(loadState);
-  const [month, setMonth] = useState(localStorage.getItem("bilancio-famiglia-month") || "Giugno");
-
+  const [month, setMonth] = useState(localStorage.getItem(MONTH_KEY) || "Giugno");
   const data = state[month];
+
+  const saveNext = (next, selectedMonth = month) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    localStorage.setItem(MONTH_KEY, selectedMonth);
+  };
 
   const updateMonth = (updater) => {
     setState((previous) => {
       const next = structuredClone(previous);
       updater(next[month]);
-      localStorage.setItem("bilancio-famiglia-react", JSON.stringify(next));
+      saveNext(next);
       return next;
     });
   };
 
   const switchMonth = (value) => {
     setMonth(value);
-    localStorage.setItem("bilancio-famiglia-month", value);
+    localStorage.setItem(MONTH_KEY, value);
+  };
+
+  const resetCurrentMonth = () => {
+    if (!confirm(`Vuoi azzerare tutti i dati di ${month}?`)) return;
+    setState((previous) => {
+      const next = structuredClone(previous);
+      next[month] = emptyMonth();
+      saveNext(next);
+      return next;
+    });
   };
 
   const result = useMemo(() => calculateMonth(data), [data]);
 
   return (
     <div className="app-shell">
-      <Header month={month} setMonth={switchMonth} year={data.year} updateYear={(year) => updateMonth((d) => (d.year = year))} />
+      <Header
+        month={month}
+        setMonth={switchMonth}
+        year={data.year}
+        updateYear={(year) => updateMonth((d) => (d.year = year))}
+        resetCurrentMonth={resetCurrentMonth}
+      />
 
       <main className="dashboard-grid">
         <FundsCard data={data} result={result} updateMonth={updateMonth} />
@@ -222,24 +123,20 @@ function App() {
   );
 }
 
-function Header({ month, setMonth, year, updateYear }) {
+function Header({ month, setMonth, year, updateYear, resetCurrentMonth }) {
   return (
     <header className="top-hero">
       <section className="brand-block">
         <div className="decor-leaf left">❧</div>
-        <h1>
-          Bilancio Mensile <Heart size={34} strokeWidth={2.2} />
-        </h1>
-        <p>Organizza le entrate, gestisci le spese e raggiungi i tuoi obiettivi</p>
+        <h1>Bilancio Mensile <Heart size={34} strokeWidth={2.2} /></h1>
+        <p>Parti da zero ogni mese, inserisci entrate e uscite reali</p>
       </section>
 
       <section className="period-controls">
         <div className="period-pill">
           <span>MESE</span>
           <select value={month} onChange={(event) => setMonth(event.target.value)}>
-            {MONTHS.map((item) => (
-              <option key={item}>{item}</option>
-            ))}
+            {MONTHS.map((item) => <option key={item}>{item}</option>)}
           </select>
         </div>
         <div className="period-pill">
@@ -248,19 +145,15 @@ function Header({ month, setMonth, year, updateYear }) {
         </div>
       </section>
 
-      <section className="coffee-card">
-        <Coffee size={56} />
-      </section>
+      <section className="coffee-card"><Coffee size={56} /></section>
 
       <section className="sticky-note">
-        Piccoli passi
-        <br />
-        ogni giorno
-        <br />
-        portano a grandi
-        <br />
-        risultati ♡
+        Piccoli passi<br />ogni giorno<br />portano a grandi<br />risultati ♡
       </section>
+
+      <button className="reset-month" onClick={resetCurrentMonth}>
+        <RotateCcw size={17} /> Azzera mese
+      </button>
     </header>
   );
 }
@@ -268,7 +161,7 @@ function Header({ month, setMonth, year, updateYear }) {
 function FundsCard({ data, result, updateMonth }) {
   return (
     <section className="panel funds-panel">
-      <PanelTitle color="green" icon={<PiggyBank />} title="Fondi disponibili" subtitle="scegli da dove prelevare" />
+      <PanelTitle color="green" icon={<PiggyBank />} title="Fondi disponibili" subtitle="tutto modificabile, parte da zero" />
       <table>
         <thead>
           <tr>
@@ -282,17 +175,11 @@ function FundsCard({ data, result, updateMonth }) {
         <tbody>
           {FUNDS.map(({ key, icon: Icon }) => (
             <tr key={key}>
-              <td className="name-cell">
-                <Icon size={18} /> {key}
-              </td>
-              <td>
-                <NumberField value={data.funds[key]} onChange={(value) => updateMonth((d) => (d.funds[key] = value))} />
-              </td>
+              <td className="name-cell"><Icon size={18} /> {key}</td>
+              <td><NumberField value={data.funds[key]} onChange={(value) => updateMonth((d) => (d.funds[key] = value))} /></td>
               <td className="money">{euro(result.funds[key].variable)}</td>
               <td className="money">{euro(result.funds[key].fixed)}</td>
-              <td className={`money strong ${result.funds[key].current < 0 ? "danger" : ""}`}>
-                {euro(result.funds[key].current)}
-              </td>
+              <td className={`money strong ${result.funds[key].current < 0 ? "danger" : ""}`}>{euro(result.funds[key].current)}</td>
             </tr>
           ))}
         </tbody>
@@ -313,7 +200,7 @@ function FundsCard({ data, result, updateMonth }) {
 function BudgetCard({ data, result, updateMonth }) {
   return (
     <section className="panel budget-panel">
-      <PanelTitle color="rose" icon={<ShoppingCart />} title="Budget variabili" subtitle="registra le spese qui sotto" />
+      <PanelTitle color="rose" icon={<ShoppingCart />} title="Budget variabili" subtitle="budget e spese modificabili" />
       <table>
         <thead>
           <tr>
@@ -328,15 +215,9 @@ function BudgetCard({ data, result, updateMonth }) {
         <tbody>
           {CATEGORIES.map(({ key, icon: Icon }) => (
             <tr key={key}>
-              <td className="name-cell">
-                <Icon size={18} /> {key}
-              </td>
-              <td>
-                <NumberField value={data.budgets[key]} onChange={(value) => updateMonth((d) => (d.budgets[key] = value))} />
-              </td>
-              <td>
-                <NumberField value={data.quick[key].amount} onChange={(value) => updateMonth((d) => (d.quick[key].amount = value))} />
-              </td>
+              <td className="name-cell"><Icon size={18} /> {key}</td>
+              <td><NumberField value={data.budgets[key]} onChange={(value) => updateMonth((d) => (d.budgets[key] = value))} /></td>
+              <td><NumberField value={data.quick[key].amount} onChange={(value) => updateMonth((d) => (d.quick[key].amount = value))} /></td>
               <td>
                 <SelectField
                   value={data.quick[key].source}
@@ -344,11 +225,10 @@ function BudgetCard({ data, result, updateMonth }) {
                   placeholder="Scegli fondo"
                   onChange={(value) => updateMonth((d) => (d.quick[key].source = value))}
                 />
+                {data.quick[key].amount > 0 && !data.quick[key].source && <small className="warning-inline">Scegli fondo</small>}
               </td>
               <td className="money">{euro(result.budgets[key].spent)}</td>
-              <td className={`money strong ${result.budgets[key].left < 0 ? "danger" : ""}`}>
-                {euro(result.budgets[key].left)}
-              </td>
+              <td className={`money strong ${result.budgets[key].left < 0 ? "danger" : ""}`}>{euro(result.budgets[key].left)}</td>
             </tr>
           ))}
         </tbody>
@@ -356,7 +236,7 @@ function BudgetCard({ data, result, updateMonth }) {
           <tr>
             <td>Totale variabili</td>
             <td>{euro(result.totalBudget)}</td>
-            <td>{euro(Object.values(data.quick).reduce((sum, item) => sum + (Number(item.amount) || 0), 0))}</td>
+            <td>{euro(result.quickTotal)}</td>
             <td></td>
             <td>{euro(result.totalBudgetSpent)}</td>
             <td>{euro(result.totalBudgetLeft)}</td>
@@ -365,22 +245,18 @@ function BudgetCard({ data, result, updateMonth }) {
       </table>
 
       <div className="action-row">
-        <button className="fake-button green-button">✓ Registra spesa</button>
+        <div className="fake-button green-button">✓ Salvataggio automatico</div>
         <button
           className="fake-button purple-button"
-          onClick={() =>
-            updateMonth((d) => {
-              Object.keys(d.quick).forEach((key) => {
-                d.quick[key] = { amount: 0, source: "" };
-              });
-            })
-          }
+          onClick={() => updateMonth((d) => {
+            Object.keys(d.quick).forEach((key) => d.quick[key] = { amount: 0, source: "" });
+          })}
         >
-          <Trash2 size={17} /> Annulla
+          <Trash2 size={17} /> Pulisci spese veloci
         </button>
         <div className="tip-card">
           <Info size={18} />
-          Inserisci importo e fondo. Tutto si aggiorna automaticamente.
+          Se inserisci una spesa, scegli sempre da dove prendi i soldi.
         </div>
       </div>
     </section>
@@ -401,11 +277,11 @@ function SummaryPanel({ result }) {
     ["Soldi da gestire", result.freeMoney, "Per imprevisti e libertà", true]
   ];
 
+  const statusClass = result.freeMoney < 0 ? "danger" : result.freeMoney < 300 ? "attention" : "ok";
+
   return (
     <aside className="summary-panel">
-      <div className="summary-title">
-        <Wallet size={18} /> Riepilogo — soldi davvero da gestire
-      </div>
+      <div className="summary-title"><Wallet size={18} /> Riepilogo — soldi davvero da gestire</div>
 
       <div className="summary-list">
         {rows.map(([label, value, caption, highlight]) => (
@@ -417,26 +293,32 @@ function SummaryPanel({ result }) {
         ))}
       </div>
 
-      <div className="money-hero">
+      <div className={`money-hero ${statusClass}`}>
         <Heart size={25} />
         <span>Soldi da gestire</span>
-        <strong className={result.freeMoney < 0 ? "danger" : ""}>{euro(result.freeMoney)}</strong>
+        <strong>{euro(result.freeMoney)}</strong>
         <small>Quello che resta per imprevisti e libertà</small>
       </div>
 
       <div className="mini-kpi blue-kpi">
-        <span>
-          <Target size={18} /> Previsione fine mese
-        </span>
-        <strong>{euro(result.forecast)}</strong>
+        <span><Target size={18} /> Previsione fine mese</span>
+        <strong className={result.forecast < 0 ? "danger" : ""}>{euro(result.forecast)}</strong>
       </div>
 
-      <div className="mini-kpi green-kpi">
-        <span>
-          <CheckCircle2 size={18} /> Stato mese
-        </span>
-        <strong>{result.freeMoney < 0 ? "RISCHIO" : "OK"}</strong>
+      <div className={`mini-kpi ${statusClass === "danger" ? "red-kpi" : statusClass === "attention" ? "yellow-kpi" : "green-kpi"}`}>
+        <span><CheckCircle2 size={18} /> Stato mese</span>
+        <strong>{result.freeMoney < 0 ? "RISCHIO" : result.freeMoney < 300 ? "ATTENZIONE" : "OK"}</strong>
       </div>
+
+      {result.missingSources.length > 0 && (
+        <div className="alert-card">
+          <AlertTriangle size={18} />
+          <div>
+            <b>Fonti mancanti</b>
+            <span>{result.missingSources.length} voce/i pagate o spese senza fondo.</span>
+          </div>
+        </div>
+      )}
 
       <div className="quote-card">La disciplina di oggi<br />è la libertà di domani.<br />♡</div>
     </aside>
@@ -448,32 +330,31 @@ function GuideCard() {
     <section className="guide-panel">
       <h3>📌 Come funziona</h3>
       <ol>
-        <li>Scegli da dove prelevare i soldi per ogni spesa variabile.</li>
-        <li>Inserisci l'importo nella colonna importo spesa oppure nello storico.</li>
-        <li>Seleziona il fondo nella colonna “Da dove li prendo”.</li>
-        <li>Per le rate scegli fonte e metti pagato = Sì.</li>
-        <li>Il fondo si scala e la categoria si aggiorna in automatico.</li>
+        <li>Ogni mese parte con importi a zero.</li>
+        <li>Inserisci fondi, budget, rate e spese reali del mese.</li>
+        <li>Se fai una spesa, scegli sempre da dove prendi i soldi.</li>
+        <li>Se una rata è pagata, scegli fonte e metti Pagato = Sì.</li>
+        <li>Il fondo scala in automatico e il riepilogo si aggiorna.</li>
       </ol>
     </section>
   );
 }
 
 function MovementsCard({ data, updateMonth }) {
-  const addMovement = () =>
-    updateMonth((d) => {
-      d.movements.push({
-        id: crypto.randomUUID(),
-        date: new Date().toLocaleDateString("it-IT"),
-        category: CATEGORIES[0].key,
-        amount: 0,
-        source: "",
-        note: ""
-      });
+  const addMovement = () => updateMonth((d) => {
+    d.movements.push({
+      id: crypto.randomUUID(),
+      date: new Date().toLocaleDateString("it-IT"),
+      category: CATEGORIES[0].key,
+      amount: 0,
+      source: "",
+      note: ""
     });
+  });
 
   return (
     <section className="panel movements-panel">
-      <PanelTitle color="blue" icon={<NotebookPen />} title="Registro spese variabili" subtitle="storico movimenti" />
+      <PanelTitle color="blue" icon={<NotebookPen />} title="Registro spese variabili" subtitle="storico movimenti del mese" />
       <table>
         <thead>
           <tr>
@@ -486,44 +367,31 @@ function MovementsCard({ data, updateMonth }) {
           </tr>
         </thead>
         <tbody>
-          {data.movements.map((move) => (
-            <tr key={move.id}>
-              <td>
-                <TextField value={move.date} onChange={(value) => updateMonth((d) => (d.movements.find((m) => m.id === move.id).date = value))} />
-              </td>
-              <td>
-                <SelectField
-                  value={move.category}
-                  options={CATEGORIES.map((c) => c.key)}
-                  onChange={(value) => updateMonth((d) => (d.movements.find((m) => m.id === move.id).category = value))}
-                />
-              </td>
-              <td>
-                <NumberField value={move.amount} onChange={(value) => updateMonth((d) => (d.movements.find((m) => m.id === move.id).amount = value))} />
-              </td>
-              <td>
-                <SelectField
-                  value={move.source}
-                  options={FUNDS.map((f) => f.key)}
-                  placeholder="Scegli fondo"
-                  onChange={(value) => updateMonth((d) => (d.movements.find((m) => m.id === move.id).source = value))}
-                />
-              </td>
-              <td>
-                <TextField value={move.note} onChange={(value) => updateMonth((d) => (d.movements.find((m) => m.id === move.id).note = value))} />
-              </td>
-              <td>
-                <button className="icon-button" onClick={() => updateMonth((d) => (d.movements = d.movements.filter((m) => m.id !== move.id)))}>
-                  <Trash2 size={16} />
-                </button>
-              </td>
-            </tr>
-          ))}
+          {data.movements.map((move) => {
+            const hasWarning = move.amount > 0 && !move.source;
+            return (
+              <tr key={move.id} className={hasWarning ? "row-warning" : ""}>
+                <td><TextField value={move.date} onChange={(value) => updateMonth((d) => findMove(d, move.id).date = value)} /></td>
+                <td>
+                  <SelectField value={move.category} options={CATEGORIES.map((c) => c.key)} onChange={(value) => updateMonth((d) => findMove(d, move.id).category = value)} />
+                </td>
+                <td><NumberField value={move.amount} onChange={(value) => updateMonth((d) => findMove(d, move.id).amount = value)} /></td>
+                <td>
+                  <SelectField value={move.source} options={FUNDS.map((f) => f.key)} placeholder="Scegli fondo" onChange={(value) => updateMonth((d) => findMove(d, move.id).source = value)} />
+                  {hasWarning && <small className="warning-inline">Scegli fondo</small>}
+                </td>
+                <td><TextField value={move.note} onChange={(value) => updateMonth((d) => findMove(d, move.id).note = value)} /></td>
+                <td>
+                  <button className="icon-button" onClick={() => updateMonth((d) => d.movements = d.movements.filter((m) => m.id !== move.id))}>
+                    <Trash2 size={16} />
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
-      <button className="add-button" onClick={addMovement}>
-        <Plus size={18} /> Aggiungi movimento
-      </button>
+      <button className="add-button" onClick={addMovement}><Plus size={18} /> Aggiungi movimento</button>
     </section>
   );
 }
@@ -531,7 +399,7 @@ function MovementsCard({ data, updateMonth }) {
 function FixedCard({ data, result, updateMonth }) {
   return (
     <section className="panel fixed-panel">
-      <PanelTitle color="orange" icon={<ReceiptText />} title="Spese fisse / rate" subtitle="gestione diretta nel mese" />
+      <PanelTitle color="orange" icon={<ReceiptText />} title="Spese fisse / rate" subtitle="importi modificabili, default zero" />
       <table>
         <thead>
           <tr>
@@ -546,25 +414,20 @@ function FixedCard({ data, result, updateMonth }) {
         <tbody>
           {Object.entries(data.fixed).map(([name, item]) => {
             const paid = isPaid(item.paid);
+            const missingSource = paid && item.amount > 0 && !item.source;
             return (
-              <tr key={name}>
+              <tr key={name} className={missingSource ? "row-warning" : ""}>
                 <td className="name-cell">{name}</td>
+                <td><NumberField value={item.amount} onChange={(value) => updateMonth((d) => d.fixed[name].amount = value)} /></td>
                 <td>
-                  <NumberField value={item.amount} onChange={(value) => updateMonth((d) => (d.fixed[name].amount = value))} />
+                  <SelectField value={item.source} options={FUNDS.map((f) => f.key)} placeholder="Scegli fondo" onChange={(value) => updateMonth((d) => d.fixed[name].source = value)} />
+                  {missingSource && <small className="warning-inline">Scegli fondo</small>}
                 </td>
                 <td>
-                  <SelectField
-                    value={item.source}
-                    options={FUNDS.map((f) => f.key)}
-                    placeholder="Scegli fondo"
-                    onChange={(value) => updateMonth((d) => (d.fixed[name].source = value))}
-                  />
-                </td>
-                <td>
-                  <SelectField value={item.paid} options={["Sì", "No"]} onChange={(value) => updateMonth((d) => (d.fixed[name].paid = value))} />
+                  <SelectField value={item.paid} options={["Sì", "No"]} onChange={(value) => updateMonth((d) => d.fixed[name].paid = value)} />
                 </td>
                 <td className="money strong">{euro(paid ? 0 : item.amount)}</td>
-                <td>{paid ? "Pagata" : "Da pagare"}</td>
+                <td><span className={`status-badge ${paid ? "paid" : "pending"}`}>{paid ? "Pagata" : "Da pagare"}</span></td>
               </tr>
             );
           })}
@@ -575,8 +438,8 @@ function FixedCard({ data, result, updateMonth }) {
             <td>{euro(result.fixedTotal)}</td>
             <td></td>
             <td>Già pagate</td>
-            <td>{euro(result.fixedToPay)}</td>
-            <td>{euro(result.fixedPaid)}</td>
+            <td>Da pagare: {euro(result.fixedToPay)}</td>
+            <td>Pagate: {euro(result.fixedPaid)}</td>
           </tr>
         </tfoot>
       </table>
@@ -587,13 +450,31 @@ function FixedCard({ data, result, updateMonth }) {
 function PanelTitle({ color, icon, title, subtitle }) {
   return (
     <div className={`panel-title ${color}`}>
-      <div>
-        {icon}
-        <h2>{title}</h2>
-      </div>
+      <div>{icon}<h2>{title}</h2></div>
       <p>{subtitle}</p>
     </div>
   );
+}
+
+function NumberField({ value, onChange }) {
+  return <input className="input number" type="number" step="0.01" value={Number(value) || 0} onChange={(e) => onChange(Number(e.target.value) || 0)} />;
+}
+
+function TextField({ value, onChange, placeholder = "" }) {
+  return <input className="input" value={value || ""} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />;
+}
+
+function SelectField({ value, onChange, options, placeholder = "Scegli" }) {
+  return (
+    <select className="input select" value={value || ""} onChange={(e) => onChange(e.target.value)}>
+      <option value="">{placeholder}</option>
+      {options.map((option) => <option value={option} key={option}>{option}</option>)}
+    </select>
+  );
+}
+
+function findMove(data, id) {
+  return data.movements.find((m) => m.id === id);
 }
 
 function isPaid(value) {
@@ -604,16 +485,19 @@ function calculateMonth(data) {
   const spentByFund = Object.fromEntries(FUNDS.map(({ key }) => [key, 0]));
   const fixedByFund = Object.fromEntries(FUNDS.map(({ key }) => [key, 0]));
   const spentByCategory = Object.fromEntries(CATEGORIES.map(({ key }) => [key, 0]));
+  const missingSources = [];
 
   Object.entries(data.quick).forEach(([category, item]) => {
     const amount = Number(item.amount) || 0;
     spentByCategory[category] += amount;
+    if (amount > 0 && !item.source) missingSources.push(`Spesa veloce: ${category}`);
     if (item.source) spentByFund[item.source] += amount;
   });
 
   data.movements.forEach((item) => {
     const amount = Number(item.amount) || 0;
     spentByCategory[item.category] = (spentByCategory[item.category] || 0) + amount;
+    if (amount > 0 && !item.source) missingSources.push(`Movimento: ${item.category}`);
     if (item.source) spentByFund[item.source] += amount;
   });
 
@@ -621,12 +505,13 @@ function calculateMonth(data) {
   let fixedPaid = 0;
   let fixedToPay = 0;
 
-  Object.values(data.fixed).forEach((item) => {
+  Object.entries(data.fixed).forEach(([name, item]) => {
     const amount = Number(item.amount) || 0;
     fixedTotal += amount;
 
     if (isPaid(item.paid)) {
       fixedPaid += amount;
+      if (amount > 0 && !item.source) missingSources.push(`Rata pagata senza fondo: ${name}`);
       if (item.source) fixedByFund[item.source] += amount;
     } else {
       fixedToPay += amount;
@@ -656,6 +541,7 @@ function calculateMonth(data) {
   const totalBudget = sumObject(budgets, "budget");
   const totalBudgetSpent = sumObject(budgets, "spent");
   const totalBudgetLeft = sumObject(budgets, "left");
+  const quickTotal = Object.values(data.quick).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
   const futureCommitments = totalBudgetLeft + fixedToPay;
   const freeMoney = totalCurrent - futureCommitments;
@@ -671,12 +557,14 @@ function calculateMonth(data) {
     totalBudget,
     totalBudgetSpent,
     totalBudgetLeft,
+    quickTotal,
     fixedTotal,
     fixedPaid,
     fixedToPay,
     futureCommitments,
     freeMoney,
-    forecast
+    forecast,
+    missingSources
   };
 }
 
