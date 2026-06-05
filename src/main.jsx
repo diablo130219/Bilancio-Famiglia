@@ -5,7 +5,7 @@ import {
   PiggyBank, Wallet, ShoppingCart, ReceiptText, NotebookPen, Target,
   CheckCircle2, Trash2, Plus, Heart, Coffee, Landmark, Briefcase,
   Users, Baby, Home, HandCoins, Star, Fuel, Gift, Info, AlertTriangle,
-  RotateCcw, Download, BarChart3, ShieldCheck, DatabaseZap, PieChart, CalendarCheck, TrendingUp, Sparkles, Trophy
+  RotateCcw, Download, BarChart3, ShieldCheck, DatabaseZap, PieChart, CalendarCheck, TrendingUp, Sparkles, Trophy, Banknote, TrendingDown, CircleDollarSign
 } from "lucide-react";
 import "./style.css";
 
@@ -239,6 +239,7 @@ function App() {
         <InsightsPanel data={data} result={result} />
         <GoalsPanel data={data} updateMonth={updateMonth} />
         <CalendarPanel data={data} />
+        <FinancialCoachPanel result={result} />
         <AnnualMiniPanel state={state} />
       </main>
     </div>
@@ -286,101 +287,116 @@ function Header({ month, setMonth, year, updateYear, resetCurrentMonth, cloudSta
 
 
 
+
 function CloudToolsPanel({ state, result }) {
   const annual = calculateAnnualStats(state);
-  const goals = calculateGoalsTotal(state);
-  const monthOut = (result.totalBudgetSpent || 0) + (result.fixedPaid || 0);
-  const goalPercent = goals.target > 0 ? Math.min(100, Math.round((goals.current / goals.target) * 100)) : 0;
+  const monthlyOut = (result.totalBudgetSpent || 0) + (result.fixedPaid || 0);
+  const plannedOut = (result.totalBudget || 0) + (result.fixedTotal || 0);
+  const savingRate = result.totalInitial > 0 ? Math.round((result.freeMoney / result.totalInitial) * 100) : 0;
+  const active = annual.rows.filter((row) => row.initial !== 0 || row.spent !== 0 || row.free !== 0);
 
   return (
-    <section className="control-center-panel">
-      <div className="control-card income">
-        <div className="control-icon"><Wallet size={22} /></div>
-        <span>Entrate mese</span>
-        <strong>{euro(result.totalInitial)}</strong>
-        <small>Fondi iniziali disponibili</small>
+    <section className="control-center">
+      <div className="control-main">
+        <div className="control-title">
+          <CircleDollarSign size={24} />
+          <div>
+            <span>Centro controllo mese</span>
+            <strong>{euro(result.freeMoney)}</strong>
+            <small>Disponibilità reale dopo impegni futuri</small>
+          </div>
+        </div>
+
+        <div className="control-grid">
+          <div>
+            <span>Entrate mese</span>
+            <strong>{euro(result.totalInitial)}</strong>
+          </div>
+          <div>
+            <span>Uscite già fatte</span>
+            <strong>{euro(monthlyOut)}</strong>
+          </div>
+          <div>
+            <span>Uscite previste</span>
+            <strong>{euro(plannedOut)}</strong>
+          </div>
+          <div>
+            <span>Tasso libertà</span>
+            <strong className={savingRate < 0 ? "danger" : savingRate < 20 ? "attention" : ""}>{savingRate}%</strong>
+          </div>
+        </div>
       </div>
 
-      <div className="control-card expense">
-        <div className="control-icon"><TrendingUp size={22} /></div>
-        <span>Uscite già usate</span>
-        <strong>{euro(monthOut)}</strong>
-        <small>Variabili + fisse pagate</small>
-      </div>
+      <div className="control-side">
+        <div className="control-mini">
+          <DatabaseZap size={21} />
+          <div>
+            <span>Cloud</span>
+            <strong>Sincronizzato</strong>
+            <small>PC casa, lavoro e telefono</small>
+          </div>
+        </div>
 
-      <div className={`control-card saving ${result.freeMoney < 0 ? "bad" : result.freeMoney < 300 ? "warn" : "good"}`}>
-        <div className="control-icon"><Sparkles size={22} /></div>
-        <span>Risparmio libero</span>
-        <strong>{euro(result.freeMoney)}</strong>
-        <small>Soldi da gestire</small>
-      </div>
+        <div className="control-mini">
+          <Trophy size={21} />
+          <div>
+            <span>Mese migliore</span>
+            <strong>{annual.bestActive?.month || "-"}</strong>
+            <small>{euro(annual.bestActive?.free || 0)}</small>
+          </div>
+        </div>
 
-      <div className="control-card goal">
-        <div className="control-icon"><Target size={22} /></div>
-        <span>Obiettivo mese</span>
-        <strong>{goals.target > 0 ? `${goalPercent}%` : "0%"}</strong>
-        <small>{euro(goals.current)} / {euro(goals.target)}</small>
-        <div className="tiny-progress"><div style={{ width: `${goalPercent}%` }} /></div>
-      </div>
-
-      <div className="control-card cloud">
-        <div className="control-icon"><DatabaseZap size={22} /></div>
-        <span>Cloud</span>
-        <strong>Sincronizzato</strong>
-        <small>PC, telefono e lavoro</small>
-      </div>
-
-      <div className="control-card export">
-        <div className="control-icon"><ShieldCheck size={22} /></div>
-        <span>Backup</span>
-        <strong>Esporta dati</strong>
-        <button className="mini-action" onClick={() => downloadJsonBackup(state)}>Scarica JSON</button>
+        <button className="backup-button" onClick={() => downloadJsonBackup(state)}>
+          <Download size={17} />
+          Scarica backup
+        </button>
       </div>
     </section>
   );
 }
 
+
+
 function AnnualMiniPanel({ state }) {
   const annual = calculateAnnualStats(state);
-  const visibleRows = annual.rows.filter((row) => row.initial !== 0 || row.spent !== 0 || row.free !== 0 || row.fixedToPay !== 0);
-  const rowsToShow = visibleRows.length ? visibleRows : annual.rows;
-  const maxFree = Math.max(1, ...annual.rows.map((row) => Math.abs(row.free || 0)));
+  const activeRows = annual.rows.filter((row) => row.initial !== 0 || row.spent !== 0 || row.free !== 0);
+  const displayRows = activeRows.length ? activeRows : annual.rows.slice(0, 3);
 
   return (
-    <section className="annual-mini-panel annual-pro">
+    <section className="annual-mini-panel annual-upgraded">
       <div className="section-heading">
         <BarChart3 size={20} />
         <div>
-          <h3>Riepilogo annuale cloud</h3>
-          <p>Storico automatico, migliori mesi e andamento dei soldi da gestire</p>
+          <h3>Riepilogo annuale</h3>
+          <p>Mostra solo i mesi davvero utilizzati e le statistiche importanti</p>
         </div>
       </div>
 
       <div className="annual-kpis">
-        <div><span>Mesi compilati</span><strong>{annual.activeMonths}</strong></div>
-        <div><span>Totale soldi da gestire</span><strong>{euro(annual.totalFree)}</strong></div>
-        <div><span>Mese migliore</span><strong>{annual.best?.month || "-"}</strong><small>{euro(annual.best?.free || 0)}</small></div>
-        <div><span>Mese più critico</span><strong>{annual.worst?.month || "-"}</strong><small>{euro(annual.worst?.free || 0)}</small></div>
-      </div>
-
-      <div className="annual-chart">
-        {annual.rows.map((row) => {
-          const height = Math.max(8, Math.round((Math.abs(row.free || 0) / maxFree) * 90));
-          return (
-            <div className="annual-bar-item" key={row.month} title={`${row.month}: ${euro(row.free)}`}>
-              <div className="bar-track"><div className={row.free < 0 ? "bar negative" : "bar positive"} style={{ height: `${height}%` }} /></div>
-              <span>{row.month.slice(0,3)}</span>
-            </div>
-          );
-        })}
+        <div>
+          <span>Mesi attivi</span>
+          <strong>{activeRows.length}</strong>
+        </div>
+        <div>
+          <span>Totale entrate</span>
+          <strong>{euro(activeRows.reduce((s, r) => s + r.initial, 0))}</strong>
+        </div>
+        <div>
+          <span>Totale speso</span>
+          <strong>{euro(activeRows.reduce((s, r) => s + r.spent, 0))}</strong>
+        </div>
+        <div>
+          <span>Libertà totale</span>
+          <strong className={annual.totalFree < 0 ? "danger" : ""}>{euro(annual.totalFree)}</strong>
+        </div>
       </div>
 
       <div className="annual-table compact">
-        {rowsToShow.map((row) => (
-          <div className={`annual-row ${row.free < 0 ? "is-negative" : ""}`} key={row.month}>
+        {displayRows.map((row) => (
+          <div className={`annual-row ${row.free < 0 ? "negative-row" : ""}`} key={row.month}>
             <b>{row.month}</b>
             <span>Entrate {euro(row.initial)}</span>
-            <span>Speso {euro(row.spent)}</span>
+            <span>Uscite {euro(row.spent)}</span>
             <strong className={row.free < 0 ? "danger" : ""}>{euro(row.free)}</strong>
           </div>
         ))}
@@ -388,6 +404,8 @@ function AnnualMiniPanel({ state }) {
     </section>
   );
 }
+
+
 
 function ManagerDashboard({ result, data, month }) {
   const budgetUsed = result.totalBudget > 0 ? Math.min(999, Math.round((result.totalBudgetSpent / result.totalBudget) * 100)) : 0;
@@ -546,6 +564,55 @@ function CalendarPanel({ data }) {
   );
 }
 
+
+function FinancialCoachPanel({ result }) {
+  const variablePct = result.totalBudget > 0 ? Math.round((result.totalBudgetSpent / result.totalBudget) * 100) : 0;
+  const fixedPct = result.fixedTotal > 0 ? Math.round((result.fixedPaid / result.fixedTotal) * 100) : 0;
+  const message =
+    result.freeMoney < 0
+      ? "Attenzione: gli impegni futuri superano la disponibilità attuale. Riduci una spesa variabile o rimanda una voce non essenziale."
+      : result.freeMoney < 150
+        ? "Margine basso: tieni sotto controllo sfizi e acquisti extra fino a fine mese."
+        : result.totalBudgetSpent > result.totalBudget * 0.75 && result.totalBudget > 0
+          ? "Budget variabile già molto utilizzato: rallenta sulle categorie meno importanti."
+          : "Situazione stabile: hai margine per imprevisti e libertà.";
+
+  return (
+    <section className="financial-coach-panel">
+      <div className="section-heading">
+        <Sparkles size={20} />
+        <div>
+          <h3>Analisi finanziaria</h3>
+          <p>Lettura rapida della situazione del mese</p>
+        </div>
+      </div>
+
+      <div className="coach-body">
+        <div className="coach-message">
+          <b>Consiglio del mese</b>
+          <p>{message}</p>
+        </div>
+        <div className="coach-metrics">
+          <div>
+            <span>Variabili usate</span>
+            <strong>{variablePct}%</strong>
+            <ProgressBar spent={result.totalBudgetSpent} budget={result.totalBudget} />
+          </div>
+          <div>
+            <span>Rate pagate</span>
+            <strong>{fixedPct}%</strong>
+            <ProgressBar spent={result.fixedPaid} budget={result.fixedTotal} />
+          </div>
+          <div>
+            <span>Margine finale</span>
+            <strong className={result.forecast < 0 ? "danger" : ""}>{euro(result.forecast)}</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function FundsCard({ data, result, updateMonth }) {
   return (
     <section className="panel funds-panel">
@@ -635,20 +702,29 @@ function BudgetCard({ data, result, updateMonth }) {
         </tfoot>
       </table>
 
-      <div className="action-row">
-        <div className="fake-button green-button">✓ Salvataggio automatico</div>
+      <div className="budget-control-strip">
+        <div className="strip-card">
+          <TrendingDown size={18} />
+          <div>
+            <span>Spese variabili</span>
+            <strong>{euro(result.totalBudgetSpent)}</strong>
+          </div>
+        </div>
+        <div className="strip-card">
+          <Wallet size={18} />
+          <div>
+            <span>Ancora da usare</span>
+            <strong>{euro(result.totalBudgetLeft)}</strong>
+          </div>
+        </div>
         <button
-          className="fake-button purple-button"
+          className="strip-action"
           onClick={() => updateMonth((d) => {
             Object.keys(d.quick).forEach((key) => d.quick[key] = { amount: 0, source: "" });
           })}
         >
           <Trash2 size={17} /> Pulisci spese veloci
         </button>
-        <div className="tip-card">
-          <Info size={18} />
-          Se inserisci una spesa, scegli sempre da dove prendi i soldi.
-        </div>
       </div>
     </section>
   );
@@ -1041,16 +1117,6 @@ function downloadJsonBackup(state) {
   URL.revokeObjectURL(url);
 }
 
-function calculateGoalsTotal(state) {
-  const currentMonth = localStorage.getItem(MONTH_KEY) || "Giugno";
-  const goals = state?.[currentMonth]?.goals || [];
-  return goals.reduce((acc, goal) => {
-    acc.current += Number(goal.current) || 0;
-    acc.target += Number(goal.target) || 0;
-    return acc;
-  }, { current: 0, target: 0 });
-}
-
 function calculateAnnualStats(state) {
   const rows = Object.entries(state || {}).map(([monthName, data]) => {
     try {
@@ -1067,12 +1133,15 @@ function calculateAnnualStats(state) {
     }
   });
 
+  const active = rows.filter((r) => r.initial !== 0 || r.spent !== 0 || r.free !== 0);
   const best = [...rows].sort((a, b) => b.free - a.free)[0];
   const worst = [...rows].sort((a, b) => a.free - b.free)[0];
-  const totalFree = rows.reduce((s, r) => s + r.free, 0);
-  const activeMonths = rows.filter((r) => r.initial !== 0 || r.spent !== 0 || r.free !== 0).length;
+  const bestActive = active.length ? [...active].sort((a, b) => b.free - a.free)[0] : null;
+  const worstActive = active.length ? [...active].sort((a, b) => a.free - b.free)[0] : null;
+  const totalFree = active.reduce((s, r) => s + r.free, 0);
+  const activeMonths = active.length;
 
-  return { rows, best, worst, totalFree, activeMonths };
+  return { rows, best, worst, bestActive, worstActive, totalFree, activeMonths };
 }
 
 createRoot(document.getElementById("root")).render(<App />);
