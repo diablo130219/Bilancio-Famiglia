@@ -1,0 +1,5 @@
+services:
+  - type: web
+    name: bilancio-famiglia-premium
+    runtime: static
+    staticPublishPath: .
