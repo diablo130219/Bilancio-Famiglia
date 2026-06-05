@@ -60,7 +60,7 @@ const emptyMonth = () => ({
 const initialState = () => Object.fromEntries(MONTHS.map((m) => [m, emptyMonth()]));
 
 const makeId = () => {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) return makeId();
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
