@@ -66,3 +66,13 @@ Modifiche visibili:
 - Pannello destro trasformato in Analisi del mese
 - Eliminati doppioni con dashboard alta
 - Margine finale previsto, categoria più usata, fondo più usato, budget usato e tasso libertà
+
+
+## V11 WOW UI
+
+Modifiche:
+- backup ridotto a piccolo pulsante compatto
+- UI più premium con glass effect
+- gradienti, shine leggero e ombre migliorate
+- header più elegante
+- card più moderne e meno piatte
