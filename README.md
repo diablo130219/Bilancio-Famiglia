@@ -33,3 +33,18 @@ Se il salvataggio cloud dà errore, esegui in Supabase SQL Editor:
 grant usage on schema public to anon, authenticated;
 grant select, insert, update on table public.bilanci to anon, authenticated;
 ```
+
+
+## V8 Cloud Plus
+
+Migliorie:
+- Cloud Supabase già supportato
+- pannello cloud e backup JSON
+- riepilogo annuale sintetico
+- storico mesi leggibile
+- UI più professionale
+- preparazione per login futuro
+
+Variabili Render:
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
