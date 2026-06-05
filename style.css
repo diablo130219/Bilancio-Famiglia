@@ -227,7 +227,7 @@ select {
   padding-bottom: 14px;
 }
 
-.summary-title {
+.summary-header {
   padding: 13px 16px;
   color: var(--white);
   background: linear-gradient(135deg, var(--teal), #0b5f59);

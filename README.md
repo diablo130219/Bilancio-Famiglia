@@ -1,14 +1,15 @@
 # Bilancio Famiglia Premium
 
-Versione pulita della web app.
+Versione corretta per Render.
 
-## Avvio locale
-Apri `index.html` nel browser.
+## Render
+Crea uno Static Site con:
 
-## Pubblicazione su Render
-- New + > Static Site
-- Build command: lascia vuoto
-- Publish directory: `.`
-- Collega il repository GitHub con questi file.
+- Build Command: lascia vuoto oppure `echo ok`
+- Publish Directory: `.`
+- Root Directory: vuoto
 
-I dati vengono salvati nel browser tramite localStorage.
+Il CSS e JS sono nella root:
+- index.html
+- style.css
+- app.js
