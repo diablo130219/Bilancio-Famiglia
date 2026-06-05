@@ -540,3 +540,110 @@ tfoot td {
     grid-template-columns: 540px 760px 430px;
   }
 }
+
+
+/* V4 — Spese fisse nel riquadro centrale evidenziato */
+.app-shell {
+  max-width: 2060px;
+  padding: 22px 48px 46px;
+}
+
+.top-hero {
+  margin-bottom: 12px;
+}
+
+.dashboard-grid {
+  margin-top: 26px;
+  grid-template-columns: minmax(500px, 1.05fr) minmax(720px, 1.55fr) minmax(390px, .95fr);
+  gap: 20px 22px;
+  align-items: start;
+}
+
+.funds-panel {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.budget-panel {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.summary-panel {
+  grid-column: 3;
+  grid-row: 1 / span 3;
+  min-width: 390px;
+}
+
+.fixed-panel {
+  grid-column: 1 / 3;
+  grid-row: 2;
+  margin-top: 4px;
+  border: 3px solid #22c55e;
+  box-shadow: 0 20px 45px rgba(34, 197, 94, .12), var(--shadow);
+}
+
+.guide-panel {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.movements-panel {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.fixed-panel table {
+  font-size: 13.5px;
+}
+
+.fixed-panel th,
+.fixed-panel td {
+  padding: 7px 9px;
+}
+
+.fixed-panel .panel-title {
+  padding: 10px 16px;
+}
+
+.fixed-panel .input {
+  min-height: 34px;
+  padding: 6px 8px;
+}
+
+.fixed-panel .select {
+  min-width: 160px;
+}
+
+.fixed-panel .status-badge {
+  padding: 5px 9px;
+}
+
+.summary-row {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.money-hero {
+  padding: 22px;
+}
+
+.quote-card {
+  padding: 26px 12px;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .funds-panel,
+  .budget-panel,
+  .summary-panel,
+  .fixed-panel,
+  .guide-panel,
+  .movements-panel {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
