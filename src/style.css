@@ -2045,3 +2045,22 @@ body {
     width: 100% !important;
   }
 }
+
+
+/* V12 calcoli corretti */
+.analysis-panel-right .right-hero small,
+.summary-row small {
+  font-weight: 700;
+}
+
+.control-title small::after {
+  content: " · budget residui non sottratti due volte";
+  color: #0f766e;
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .control-title small::after {
+    content: "";
+  }
+}

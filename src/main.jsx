@@ -600,7 +600,7 @@ function FinancialCoachPanel({ result }) {
             <ProgressBar spent={result.fixedPaid} budget={result.fixedTotal} />
           </div>
           <div>
-            <span>Margine finale</span>
+            <span>Margine dopo rate</span>
             <strong className={result.forecast < 0 ? "danger" : ""}>{euro(result.forecast)}</strong>
           </div>
         </div>
@@ -744,9 +744,9 @@ function SummaryPanel({ result }) {
       <div className="summary-title"><Sparkles size={18} /> Analisi del mese</div>
 
       <div className="right-hero">
-        <span>Margine finale previsto</span>
+        <span>Margine dopo rate aperte</span>
         <strong className={result.forecast < 0 ? "danger" : ""}>{euro(result.forecast)}</strong>
-        <small>Quanto potresti avere dopo budget e rate previste</small>
+        <small>Fondi attuali meno rate ancora da pagare</small>
       </div>
 
       <div className="analysis-list">
@@ -1027,9 +1027,11 @@ function calculateMonth(data) {
   const totalBudgetLeft = sumObject(budgets, "left");
   const quickTotal = Object.values(data.quick).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
-  const futureCommitments = totalBudgetLeft + fixedToPay;
-  const freeMoney = totalCurrent - futureCommitments;
-  const forecast = totalInitial - (totalBudget + fixedTotal);
+  // V12: la disponibilità reale è ciò che hai davvero nei fondi oggi.
+  // Il budget variabile residuo resta informativo, ma non viene sottratto come debito.
+  const futureCommitments = fixedToPay;
+  const freeMoney = totalCurrent;
+  const forecast = totalCurrent - fixedToPay;
 
   return {
     funds,
