@@ -23,3 +23,10 @@ Aggiungi su Render:
 Non usare `npm ci` con questa versione.
 Non caricare `package-lock.json`.
 Render deve installare da zero con `npm install`.
+
+
+## V12 Calcoli corretti
+
+- Disponibilità reale = saldo attuale dei fondi.
+- Il budget variabile residuo non viene più sottratto come se fosse un debito.
+- Margine dopo rate aperte = fondi attuali - rate/fisse ancora da pagare.
