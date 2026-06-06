@@ -25,8 +25,9 @@ Non caricare `package-lock.json`.
 Render deve installare da zero con `npm install`.
 
 
-## V12 Calcoli corretti
+## V12.1 Fix calcoli e cloud
 
-- Disponibilità reale = saldo attuale dei fondi.
-- Il budget variabile residuo non viene più sottratto come se fosse un debito.
-- Margine dopo rate aperte = fondi attuali - rate/fisse ancora da pagare.
+- Il riquadro a destra non mostra più -82 se la disponibilità reale è 180.
+- "Disponibilità dopo tutto" usa la stessa logica della disponibilità reale.
+- Stato Supabase visibile anche in alto.
+- Cloud card mostra lo stato reale: Cloud attivo / Salvataggio cloud / Errore cloud.
