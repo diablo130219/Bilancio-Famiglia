@@ -225,7 +225,7 @@ function App() {
         cloudStatus={cloudStatus}
       />
 
-      <CloudToolsPanel state={state} result={result} />
+      <CloudToolsPanel state={state} result={result} cloudStatus={cloudStatus} />
       <ManagerDashboard result={result} data={data} month={month} />
 
       <main className="dashboard-grid">
@@ -274,6 +274,10 @@ function Header({ month, setMonth, year, updateYear, resetCurrentMonth, cloudSta
         Piccoli passi<br />ogni giorno<br />portano a grandi<br />risultati ♡
       </section>
 
+      <div className={`cloud-status-pill ${String(cloudStatus).toLowerCase().includes("errore") ? "cloud-error" : ""}`}>
+        {cloudStatus || "Cloud"}
+      </div>
+
       <button className="reset-month" onClick={resetCurrentMonth}>
         <RotateCcw size={17} /> Azzera mese
       </button>
@@ -284,7 +288,7 @@ function Header({ month, setMonth, year, updateYear, resetCurrentMonth, cloudSta
 
 
 
-function CloudToolsPanel({ state, result }) {
+function CloudToolsPanel({ state, result, cloudStatus }) {
   const annual = calculateAnnualStats(state);
   const monthlyOut = (result.totalBudgetSpent || 0) + (result.fixedPaid || 0);
   const plannedOut = (result.totalBudget || 0) + (result.fixedTotal || 0);
@@ -297,9 +301,9 @@ function CloudToolsPanel({ state, result }) {
         <div className="control-title">
           <CircleDollarSign size={24} />
           <div>
-            <span>Centro controllo mese</span>
+            <span>Uscite già fatte</span>
             <strong>{euro(monthlyOut)}</strong>
-            <small>Uscite già fatte: variabili + fisse pagate</small>
+            <small>Variabili + fisse già pagate</small>
           </div>
         </div>
 
@@ -328,7 +332,7 @@ function CloudToolsPanel({ state, result }) {
           <DatabaseZap size={21} />
           <div>
             <span>Cloud</span>
-            <strong>Sincronizzato</strong>
+            <strong>{cloudStatus || "Sincronizzato"}</strong>
             <small>PC casa, lavoro e telefono</small>
           </div>
         </div>
@@ -600,7 +604,7 @@ function FinancialCoachPanel({ result }) {
             <ProgressBar spent={result.fixedPaid} budget={result.fixedTotal} />
           </div>
           <div>
-            <span>Margine dopo rate</span>
+            <span>Disponibilità dopo tutto</span>
             <strong className={result.forecast < 0 ? "danger" : ""}>{euro(result.forecast)}</strong>
           </div>
         </div>
@@ -744,9 +748,9 @@ function SummaryPanel({ result }) {
       <div className="summary-title"><Sparkles size={18} /> Analisi del mese</div>
 
       <div className="right-hero">
-        <span>Margine dopo rate aperte</span>
+        <span>Disponibilità dopo tutto</span>
         <strong className={result.forecast < 0 ? "danger" : ""}>{euro(result.forecast)}</strong>
-        <small>Fondi attuali meno rate ancora da pagare</small>
+        <small>Soldi disponibili dopo budget residui e rate aperte</small>
       </div>
 
       <div className="analysis-list">
@@ -1027,11 +1031,12 @@ function calculateMonth(data) {
   const totalBudgetLeft = sumObject(budgets, "left");
   const quickTotal = Object.values(data.quick).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
-  // V12: la disponibilità reale è ciò che hai davvero nei fondi oggi.
-  // Il budget variabile residuo resta informativo, ma non viene sottratto come debito.
-  const futureCommitments = fixedToPay;
-  const freeMoney = totalCurrent;
-  const forecast = totalCurrent - fixedToPay;
+  const futureCommitments = totalBudgetLeft + fixedToPay;
+  const freeMoney = totalCurrent - futureCommitments;
+
+  // V12.1: il margine finale deve coincidere con la disponibilità dopo tutti gli impegni,
+  // quindi non usa più la vecchia formula totalInitial - (totalBudget + fixedTotal).
+  const forecast = freeMoney;
 
   return {
     funds,
