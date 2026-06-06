@@ -31,3 +31,10 @@ Render deve installare da zero con `npm install`.
 - "Disponibilità dopo tutto" usa la stessa logica della disponibilità reale.
 - Stato Supabase visibile anche in alto.
 - Cloud card mostra lo stato reale: Cloud attivo / Salvataggio cloud / Errore cloud.
+
+
+## V12.2 Centro controllo
+
+- Il riquadro grande in alto mostra "Centro controllo mese".
+- Il valore principale è la disponibilità dopo tutti gli impegni.
+- Le uscite già fatte restano visibili come dato secondario nella griglia.
