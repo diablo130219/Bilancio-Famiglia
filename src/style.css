@@ -2095,3 +2095,22 @@ body {
     margin-top: 8px;
   }
 }
+
+
+/* V12.2 centro controllo più chiaro */
+.control-title strong {
+  color: #047857;
+}
+
+.control-title strong.danger,
+.danger {
+  color: #b91c1c !important;
+}
+
+.control-main {
+  border: 1px solid rgba(34, 197, 94, .18) !important;
+}
+
+.control-title small {
+  max-width: 520px;
+}

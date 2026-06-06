@@ -301,9 +301,9 @@ function CloudToolsPanel({ state, result, cloudStatus }) {
         <div className="control-title">
           <CircleDollarSign size={24} />
           <div>
-            <span>Uscite già fatte</span>
-            <strong>{euro(monthlyOut)}</strong>
-            <small>Variabili + fisse già pagate</small>
+            <span>Centro controllo mese</span>
+            <strong>{euro(result.freeMoney)}</strong>
+            <small>Disponibilità dopo budget residui e rate aperte</small>
           </div>
         </div>
 
@@ -317,7 +317,7 @@ function CloudToolsPanel({ state, result, cloudStatus }) {
             <strong>{euro(monthlyOut)}</strong>
           </div>
           <div>
-            <span>Uscite previste</span>
+            <span>Uscite previste totali</span>
             <strong>{euro(plannedOut)}</strong>
           </div>
           <div>
