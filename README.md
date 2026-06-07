@@ -38,3 +38,12 @@ Render deve installare da zero con `npm install`.
 - Il riquadro grande in alto mostra "Centro controllo mese".
 - Il valore principale è la disponibilità dopo tutti gli impegni.
 - Le uscite già fatte restano visibili come dato secondario nella griglia.
+
+
+## V12.3 Rifiniture finali
+
+- Tolto doppione: la card alta ora mostra il centro controllo, la card piccola mostra il saldo fondi attuale.
+- Pannello destro rinominato in Margine gestibile.
+- Card Cloud più utile: mostra anche quante voci sono salvate.
+- Mese migliore mostra mese + anno.
+- Glow dinamico sul riquadro principale in base alla situazione.
