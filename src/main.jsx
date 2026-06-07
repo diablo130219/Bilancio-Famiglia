@@ -706,7 +706,7 @@ function ContascattiPage({ data, month, updateMonth }) {
             </div>
             <div>
               <span>Lettura attuale</span>
-              <strong>{meter.letturaAttuale || 0}</strong>
+              <strong>{stats.current || 0}</strong>
             </div>
             <div>
               <span>Costo stimato</span>
@@ -790,19 +790,26 @@ function ContascattiPage({ data, month, updateMonth }) {
               <tr>
                 <th>Data</th>
                 <th>Lettura</th>
-                <th>Consumo</th>
+                <th>Consumo giornata</th>
+                <th>Totale progressivo</th>
                 <th>Note</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {(meter.movimenti || []).map((row) => {
-                const consumo = Math.max(0, (Number(row.lettura) || 0) - (Number(meter.letturaIniziale) || 0));
+              {(meter.movimenti || []).map((row, index, rows) => {
+                const lettura = Number(row.lettura) || 0;
+                const previousReading = index === 0
+                  ? Number(meter.letturaIniziale) || 0
+                  : Number(rows[index - 1]?.lettura) || Number(meter.letturaIniziale) || 0;
+                const consumoGiorno = Math.max(0, lettura - previousReading);
+                const totaleProgressivo = Math.max(0, lettura - (Number(meter.letturaIniziale) || 0));
                 return (
                   <tr key={row.id}>
                     <td><TextField value={row.date} onChange={(value) => updateMonth((d) => { const r = findReading(ensureMeter(d), row.id); if (r) r.date = value; })} /></td>
                     <td><NumberField value={row.lettura} onChange={(value) => updateMonth((d) => { const r = findReading(ensureMeter(d), row.id); if (r) r.lettura = value; })} /></td>
-                    <td className="money strong">{consumo.toLocaleString("it-IT")} kWh</td>
+                    <td className="money strong">{consumoGiorno.toLocaleString("it-IT")} kWh</td>
+                    <td className="money">{totaleProgressivo.toLocaleString("it-IT")} kWh</td>
                     <td><TextField value={row.note} placeholder="es. sera" onChange={(value) => updateMonth((d) => { const r = findReading(ensureMeter(d), row.id); if (r) r.note = value; })} /></td>
                     <td>
                       <button className="icon-button" onClick={() => updateMonth((d) => {
@@ -853,7 +860,7 @@ function ContascattiPage({ data, month, updateMonth }) {
           <ol>
             <li>Inserisci la lettura del contatore a inizio mese.</li>
             <li>Aggiorna la lettura attuale quando vuoi.</li>
-            <li>Il consumo è lettura attuale meno lettura iniziale.</li>
+            <li>Il consumo giornata è la differenza tra la lettura del giorno e quella precedente.</li>
             <li>Imposta costo €/kWh e quota fissa per stimare la bolletta.</li>
             <li>Salva letture periodiche nello storico.</li>
           </ol>
@@ -875,7 +882,10 @@ function findReading(meter, id) {
 
 function calculateContascatti(meter = {}) {
   const start = Number(meter.letturaIniziale) || 0;
-  const current = Number(meter.letturaAttuale) || 0;
+  const readings = Array.isArray(meter.movimenti) ? meter.movimenti : [];
+  const lastSavedReading = readings.length ? Number(readings[readings.length - 1]?.lettura) || 0 : 0;
+  const manualCurrent = Number(meter.letturaAttuale) || 0;
+  const current = manualCurrent > 0 ? manualCurrent : lastSavedReading;
   const costoKwh = Number(meter.costoKwh) || 0;
   const quotaFissa = Number(meter.quotaFissa) || 0;
   const obiettivo = Number(meter.obiettivoKwh) || 0;
@@ -883,7 +893,7 @@ function calculateContascatti(meter = {}) {
   const costoStimato = consumoKwh * costoKwh + quotaFissa;
   const residuoKwh = obiettivo - consumoKwh;
   const percentuale = obiettivo > 0 ? Math.round((consumoKwh / obiettivo) * 100) : 0;
-  return { consumoKwh, costoStimato, residuoKwh, percentuale };
+  return { consumoKwh, costoStimato, residuoKwh, percentuale, current };
 }
 
 
