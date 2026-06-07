@@ -1,6 +1,6 @@
 {
   "name": "bilancio-famiglia-premium",
-  "version": "12.5.1-render-fix",
+  "version": "12.5.2-contascatti-only",
   "private": true,
   "type": "module",
   "scripts": {
