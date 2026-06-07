@@ -1,6 +1,0 @@
-services:
-  - type: web
-    name: bilancio-famiglia-react
-    runtime: static
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
