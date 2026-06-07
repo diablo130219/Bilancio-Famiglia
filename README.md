@@ -47,3 +47,20 @@ Render deve installare da zero con `npm install`.
 - Card Cloud più utile: mostra anche quante voci sono salvate.
 - Mese migliore mostra mese + anno.
 - Glow dinamico sul riquadro principale in base alla situazione.
+
+
+## V13 Contascatti Enel
+
+Aggiunta nuova sezione dal menu in alto:
+- Bilancio
+- Contascatti Enel
+
+La sezione Contascatti monitora:
+- lettura iniziale
+- lettura attuale
+- consumo kWh
+- costo stimato
+- obiettivo kWh mese
+- storico letture periodiche
+
+I dati sono salvati nello stesso stato Supabase del bilancio.
