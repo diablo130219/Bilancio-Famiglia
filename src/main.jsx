@@ -225,7 +225,7 @@ function App() {
         cloudStatus={cloudStatus}
       />
 
-      <CloudToolsPanel state={state} result={result} cloudStatus={cloudStatus} />
+      <CloudToolsPanel state={state} result={result} cloudStatus={cloudStatus} data={data} />
       <ManagerDashboard result={result} data={data} month={month} />
 
       <main className="dashboard-grid">
@@ -288,7 +288,7 @@ function Header({ month, setMonth, year, updateYear, resetCurrentMonth, cloudSta
 
 
 
-function CloudToolsPanel({ state, result, cloudStatus }) {
+function CloudToolsPanel({ state, result, cloudStatus, data }) {
   const annual = calculateAnnualStats(state);
   const monthlyOut = (result.totalBudgetSpent || 0) + (result.fixedPaid || 0);
   const plannedOut = (result.totalBudget || 0) + (result.fixedTotal || 0);
@@ -297,7 +297,7 @@ function CloudToolsPanel({ state, result, cloudStatus }) {
 
   return (
     <section className="control-center">
-      <div className="control-main">
+      <div className={`control-main ${result.freeMoney < 0 ? "money-negative" : result.freeMoney < 200 ? "money-low" : result.freeMoney < 500 ? "money-mid" : "money-good"}`}>
         <div className="control-title">
           <CircleDollarSign size={24} />
           <div>
@@ -333,7 +333,7 @@ function CloudToolsPanel({ state, result, cloudStatus }) {
           <div>
             <span>Cloud</span>
             <strong>{cloudStatus || "Sincronizzato"}</strong>
-            <small>PC casa, lavoro e telefono</small>
+            <small>{countSavedItems(state)} voci salvate · PC casa, lavoro e telefono</small>
           </div>
         </div>
 
@@ -341,7 +341,7 @@ function CloudToolsPanel({ state, result, cloudStatus }) {
           <Trophy size={21} />
           <div>
             <span>Mese migliore</span>
-            <strong>{annual.bestActive?.month || "-"}</strong>
+            <strong>{annual.bestActive ? `${annual.bestActive.month} ${data.year}` : "-"}</strong>
             <small>{euro(annual.bestActive?.free || 0)}</small>
           </div>
         </div>
@@ -415,7 +415,7 @@ function ManagerDashboard({ result, data, month }) {
 
   return (
     <section className="manager-dashboard">
-      <ManagerCard icon={<Wallet />} label="Disponibilità reale" value={euro(result.freeMoney)} tone={result.freeMoney < 0 ? "red" : result.freeMoney < 300 ? "yellow" : "green"} />
+      <ManagerCard icon={<Wallet />} label="Saldo fondi attuale" value={euro(result.totalCurrent)} tone={result.totalCurrent < 0 ? "red" : result.totalCurrent < 300 ? "yellow" : "green"} />
       <ManagerCard icon={<CalendarCheck />} label="Giorni a fine mese" value={daysLeft} suffix="giorni" tone="blue" />
       <ManagerCard icon={<TrendingUp />} label="Budget consumato" value={`${budgetUsed}%`} tone={budgetUsed >= 90 ? "red" : budgetUsed >= 70 ? "yellow" : "green"} />
       <ManagerCard icon={<ReceiptText />} label="Rate da pagare" value={euro(result.fixedToPay)} tone={result.fixedToPay > 0 ? "orange" : "green"} />
@@ -604,7 +604,7 @@ function FinancialCoachPanel({ result }) {
             <ProgressBar spent={result.fixedPaid} budget={result.fixedTotal} />
           </div>
           <div>
-            <span>Disponibilità dopo tutto</span>
+            <span>Margine gestibile</span>
             <strong className={result.forecast < 0 ? "danger" : ""}>{euro(result.forecast)}</strong>
           </div>
         </div>
@@ -748,9 +748,9 @@ function SummaryPanel({ result }) {
       <div className="summary-title"><Sparkles size={18} /> Analisi del mese</div>
 
       <div className="right-hero">
-        <span>Disponibilità dopo tutto</span>
+        <span>Margine gestibile</span>
         <strong className={result.forecast < 0 ? "danger" : ""}>{euro(result.forecast)}</strong>
-        <small>Soldi disponibili dopo budget residui e rate aperte</small>
+        <small>Quanto resta dopo budget residui e rate aperte</small>
       </div>
 
       <div className="analysis-list">
@@ -1154,6 +1154,16 @@ function calculateAnnualStats(state) {
   const activeMonths = active.length;
 
   return { rows, best, worst, bestActive, worstActive, totalFree, activeMonths };
+}
+
+
+function countSavedItems(state) {
+  return Object.values(state || {}).reduce((total, month) => {
+    const movementCount = Array.isArray(month?.movements) ? month.movements.filter((m) => Number(m.amount) > 0).length : 0;
+    const fixedCount = month?.fixed ? Object.values(month.fixed).filter((f) => Number(f.amount) > 0).length : 0;
+    const quickCount = month?.quick ? Object.values(month.quick).filter((q) => Number(q.amount) > 0).length : 0;
+    return total + movementCount + fixedCount + quickCount;
+  }, 0);
 }
 
 createRoot(document.getElementById("root")).render(<App />);
