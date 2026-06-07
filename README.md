@@ -1,66 +1,23 @@
-# Bilancio Famiglia Premium V11.2
+# Bilancio Famiglia V13 - Static Ready Render
 
-Versione pulita per Render.
+Questa versione è già compilata.
+
+## Come usarla su GitHub
+Carica nel repository SOLO questi file/cartelle:
+- index.html
+- assets/
+- README.md
 
 ## Render
-
 Static Site:
 
-- Build Command: `npm install && npm run build`
-- Publish Directory: `dist`
-- Root Directory: vuoto
+- Build Command: lascia vuoto
+- Publish Directory: .
 
-## Environment Variables
+Non usare npm install.
+Non usare npm run build.
+Non serve package.json.
 
-Aggiungi su Render:
-
-- `NODE_VERSION` = `22`
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
-
-## Nota importante
-
-Non usare `npm ci` con questa versione.
-Non caricare `package-lock.json`.
-Render deve installare da zero con `npm install`.
-
-
-## V12.1 Fix calcoli e cloud
-
-- Il riquadro a destra non mostra più -82 se la disponibilità reale è 180.
-- "Disponibilità dopo tutto" usa la stessa logica della disponibilità reale.
-- Stato Supabase visibile anche in alto.
-- Cloud card mostra lo stato reale: Cloud attivo / Salvataggio cloud / Errore cloud.
-
-
-## V12.2 Centro controllo
-
-- Il riquadro grande in alto mostra "Centro controllo mese".
-- Il valore principale è la disponibilità dopo tutti gli impegni.
-- Le uscite già fatte restano visibili come dato secondario nella griglia.
-
-
-## V12.3 Rifiniture finali
-
-- Tolto doppione: la card alta ora mostra il centro controllo, la card piccola mostra il saldo fondi attuale.
-- Pannello destro rinominato in Margine gestibile.
-- Card Cloud più utile: mostra anche quante voci sono salvate.
-- Mese migliore mostra mese + anno.
-- Glow dinamico sul riquadro principale in base alla situazione.
-
-
-## V13 Contascatti Enel
-
-Aggiunta nuova sezione dal menu in alto:
-- Bilancio
-- Contascatti Enel
-
-La sezione Contascatti monitora:
-- lettura iniziale
-- lettura attuale
-- consumo kWh
-- costo stimato
-- obiettivo kWh mese
-- storico letture periodiche
-
-I dati sono salvati nello stesso stato Supabase del bilancio.
+## Supabase
+Le variabili VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY sono già state incorporate nella build precedente se erano presenti durante la build.
+Se vuoi cambiarle, serve rigenerare la build.
