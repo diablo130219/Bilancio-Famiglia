@@ -11,6 +11,7 @@ import "./style.css";
 
 const STORAGE_KEY = "bilancio-famiglia-react-v2";
 const MONTH_KEY = "bilancio-famiglia-month-v2";
+const YEAR_KEY = "bilancio-famiglia-year-v2";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -131,12 +132,32 @@ const normalizeState = (saved) => {
   return base;
 };
 
+const normalizeYearStore = (saved) => {
+  const store = {};
+
+  if (saved?.years && typeof saved.years === "object") {
+    Object.entries(saved.years).forEach(([year, months]) => {
+      store[String(year)] = normalizeState(months);
+    });
+  } else {
+    // Migrazione automatica dalle versioni vecchie: i dati esistenti vengono messi nel 2026.
+    store["2026"] = normalizeState(saved);
+  }
+
+  return { years: store };
+};
+
+const getYearMonths = (yearStore, year) => {
+  const key = String(year || 2026);
+  return yearStore?.years?.[key] || initialState();
+};
+
 const loadState = () => {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return normalizeState(saved);
+    return normalizeYearStore(saved);
   } catch {
-    return initialState();
+    return { years: { "2026": initialState() } };
   }
 };
 
@@ -144,15 +165,17 @@ function App() {
   const [saveStatus, setSaveStatus] = useState("Pronto");
   const [state, setState] = useState(loadState);
   const [month, setMonth] = useState(localStorage.getItem(MONTH_KEY) || "Giugno");
-  const [selectedYear, setSelectedYear] = useState(Number(localStorage.getItem("bilancio-famiglia-year-v2")) || 2026);
+  const [selectedYear, setSelectedYear] = useState(Number(localStorage.getItem(YEAR_KEY)) || 2026);
   const [cloudStatus, setCloudStatus] = useState(supabase ? "Connessione cloud..." : "Solo locale");
   const [page, setPage] = useState("bilancio");
   const cloudReadyRef = useRef(false);
-  const data = { ...state[month], year: selectedYear };
+  const currentYearState = getYearMonths(state, selectedYear);
+  const data = { ...normalizeMonth(currentYearState[month]), year: selectedYear };
 
-  const saveLocal = (next, selectedMonth = month) => {
+  const saveLocal = (next, selectedMonth = month, selected = selectedYear) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     localStorage.setItem(MONTH_KEY, selectedMonth);
+    localStorage.setItem(YEAR_KEY, String(selected));
   };
 
   useEffect(() => {
@@ -176,7 +199,7 @@ function App() {
         if (error) throw error;
 
         if (!cancelled && row?.dati) {
-          const cloudState = normalizeState(row.dati);
+          const cloudState = normalizeYearStore(row.dati);
           setState(cloudState);
           saveLocal(cloudState);
         }
@@ -216,7 +239,12 @@ function App() {
   const updateMonth = (updater) => {
     setState((previous) => {
       const next = structuredClone(previous);
-      updater(next[month]);
+      const yearKey = String(selectedYear);
+      if (!next.years) next.years = {};
+      if (!next.years[yearKey]) next.years[yearKey] = initialState();
+      next.years[yearKey][month] = normalizeMonth(next.years[yearKey][month]);
+      updater(next.years[yearKey][month]);
+      next.years[yearKey][month].year = selectedYear;
       saveLocal(next);
       return next;
     });
@@ -225,20 +253,32 @@ function App() {
   const switchMonth = (value) => {
     setMonth(value);
     localStorage.setItem(MONTH_KEY, value);
+    localStorage.setItem(YEAR_KEY, String(selectedYear));
   };
 
   const changeYear = (year) => {
     const cleanYear = Number(year) || 2026;
     setSelectedYear(cleanYear);
-    localStorage.setItem("bilancio-famiglia-year-v2", String(cleanYear));
-    updateMonth((d) => (d.year = cleanYear));
+    localStorage.setItem(YEAR_KEY, String(cleanYear));
+    setState((previous) => {
+      const next = structuredClone(previous);
+      const yearKey = String(cleanYear);
+      if (!next.years) next.years = {};
+      if (!next.years[yearKey]) next.years[yearKey] = initialState();
+      saveLocal(next, month, cleanYear);
+      return next;
+    });
   };
 
   const resetCurrentMonth = () => {
-    if (!confirm(`Vuoi azzerare tutti i dati di ${month}?`)) return;
+    if (!confirm(`Vuoi azzerare tutti i dati di ${month} ${selectedYear}?`)) return;
     setState((previous) => {
       const next = structuredClone(previous);
-      next[month] = emptyMonth();
+      const yearKey = String(selectedYear);
+      if (!next.years) next.years = {};
+      if (!next.years[yearKey]) next.years[yearKey] = initialState();
+      next.years[yearKey][month] = emptyMonth();
+      next.years[yearKey][month].year = selectedYear;
       saveLocal(next);
       return next;
     });
@@ -261,7 +301,7 @@ function App() {
 
       {page === "bilancio" ? (
         <>
-          <CloudToolsPanel state={state} result={result} cloudStatus={cloudStatus} data={data} />
+          <CloudToolsPanel state={currentYearState} result={result} cloudStatus={cloudStatus} data={data} />
           <ManagerDashboard result={result} data={data} month={month} />
 
           <main className="dashboard-grid">
@@ -276,7 +316,7 @@ function App() {
             <GoalsPanel data={data} updateMonth={updateMonth} />
             <CalendarPanel data={data} />
             <FinancialCoachPanel result={result} />
-            <AnnualMiniPanel state={state} />
+            <AnnualMiniPanel state={currentYearState} />
           </main>
         </>
       ) : (
@@ -1399,7 +1439,7 @@ function downloadJsonBackup(state) {
   const payload = {
     exportedAt: new Date().toISOString(),
     app: "Bilancio Famiglia Premium",
-    version: "V11 Wow UI",
+    version: "V12.5.5 Year separated",
     data: state
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -1414,7 +1454,8 @@ function downloadJsonBackup(state) {
 }
 
 function calculateAnnualStats(state) {
-  const rows = Object.entries(state || {}).map(([monthName, data]) => {
+  const monthState = state?.years ? getYearMonths(state, new Date().getFullYear()) : state;
+  const rows = Object.entries(monthState || {}).map(([monthName, data]) => {
     try {
       const r = calculateMonth(data);
       return {
@@ -1442,7 +1483,8 @@ function calculateAnnualStats(state) {
 
 
 function countSavedItems(state) {
-  return Object.values(state || {}).reduce((total, month) => {
+  const months = state?.years ? Object.values(state.years).flatMap((year) => Object.values(year || {})) : Object.values(state || {});
+  return months.reduce((total, month) => {
     const movementCount = Array.isArray(month?.movements) ? month.movements.filter((m) => Number(m.amount) > 0).length : 0;
     const fixedCount = month?.fixed ? Object.values(month.fixed).filter((f) => Number(f.amount) > 0).length : 0;
     const quickCount = month?.quick ? Object.values(month.quick).filter((q) => Number(q.amount) > 0).length : 0;
