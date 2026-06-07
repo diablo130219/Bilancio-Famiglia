@@ -418,7 +418,7 @@ function ManagerDashboard({ result, data, month }) {
       <ManagerCard icon={<Wallet />} label="Saldo fondi attuale" value={euro(result.totalCurrent)} tone={result.totalCurrent < 0 ? "red" : result.totalCurrent < 300 ? "yellow" : "green"} />
       <ManagerCard icon={<CalendarCheck />} label="Giorni a fine mese" value={daysLeft} suffix="giorni" tone="blue" />
       <ManagerCard icon={<TrendingUp />} label="Budget consumato" value={`${budgetUsed}%`} tone={budgetUsed >= 90 ? "red" : budgetUsed >= 70 ? "yellow" : "green"} />
-      <ManagerCard icon={<ReceiptText />} label="Rate da pagare" value={euro(result.fixedToPay)} tone={result.fixedToPay > 0 ? "orange" : "green"} />
+      <ManagerCard icon={<ReceiptText />} label="Impegni residui" value={euro(result.fixedToPay)} tone={result.fixedToPay > 0 ? "orange" : "green"} />
       <ManagerCard icon={<Sparkles />} label="Rate pagate" value={`${paidRatePercent}%`} tone="purple" />
       <ManagerCard icon={<CheckCircle2 />} label="Stato mese" value={status} tone={status === "Rischio" ? "red" : status === "Attenzione" ? "yellow" : "green"} />
     </section>
@@ -604,7 +604,7 @@ function FinancialCoachPanel({ result }) {
             <ProgressBar spent={result.fixedPaid} budget={result.fixedTotal} />
           </div>
           <div>
-            <span>Margine gestibile</span>
+            <span>Libertà del mese</span>
             <strong className={result.forecast < 0 ? "danger" : ""}>{euro(result.forecast)}</strong>
           </div>
         </div>
@@ -748,7 +748,7 @@ function SummaryPanel({ result }) {
       <div className="summary-title"><Sparkles size={18} /> Analisi del mese</div>
 
       <div className="right-hero">
-        <span>Margine gestibile</span>
+        <span>Libertà del mese</span>
         <strong className={result.forecast < 0 ? "danger" : ""}>{euro(result.forecast)}</strong>
         <small>Quanto resta dopo budget residui e rate aperte</small>
       </div>
