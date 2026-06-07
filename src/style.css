@@ -2202,3 +2202,100 @@ body {
   background: rgba(255,255,255,.78);
   box-shadow: 0 12px 28px rgba(15, 23, 42, .06);
 }
+
+
+/* SOLO MODULO CONTASCATTI ENEL */
+.period-controls {
+  grid-template-columns: repeat(3, minmax(130px, auto));
+}
+
+.contascatti-control {
+  margin-top: 0;
+}
+
+.contascatti-side-mini {
+  grid-template-columns: 1fr 1fr !important;
+}
+
+.contascatti-grid {
+  display: grid;
+  grid-template-columns: minmax(520px, 1fr) minmax(520px, 1.1fr) minmax(340px, .8fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.contascatti-panel,
+.contascatti-history-panel {
+  overflow: hidden;
+}
+
+.meter-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 18px;
+}
+
+.meter-form label {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  color: #0b345c;
+  text-transform: uppercase;
+}
+
+.meter-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 16px;
+  border-top: 1px solid #e2e8f0;
+  background: rgba(248, 250, 252, .8);
+}
+
+.meter-summary-strip div {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.82);
+  border: 1px solid #e2e8f0;
+}
+
+.meter-summary-strip span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.meter-summary-strip strong {
+  display: block;
+  margin-top: 6px;
+  color: #0b345c;
+  font-size: 22px;
+}
+
+.contascatti-analysis,
+.contascatti-guide {
+  min-height: 220px;
+}
+
+@media (max-width: 1500px) {
+  .contascatti-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 1100px) {
+  .period-controls,
+  .contascatti-grid,
+  .meter-form,
+  .meter-summary-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .contascatti-side-mini {
+    grid-template-columns: 1fr !important;
+  }
+}

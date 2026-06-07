@@ -5,7 +5,7 @@ import {
   PiggyBank, Wallet, ShoppingCart, ReceiptText, NotebookPen, Target,
   CheckCircle2, Trash2, Plus, Heart, Coffee, Landmark, Briefcase,
   Users, Baby, Home, HandCoins, Star, Fuel, Gift, Info, AlertTriangle,
-  RotateCcw, Download, BarChart3, ShieldCheck, DatabaseZap, PieChart, CalendarCheck, TrendingUp, Sparkles, Trophy, Banknote, TrendingDown, CircleDollarSign
+  RotateCcw, Download, BarChart3, ShieldCheck, DatabaseZap, PieChart, CalendarCheck, TrendingUp, Sparkles, Trophy, Banknote, TrendingDown, CircleDollarSign, Zap
 } from "lucide-react";
 import "./style.css";
 
@@ -64,7 +64,15 @@ const emptyMonth = () => ({
   fixed: Object.fromEntries(FIXED_ITEMS.map((name) => [name, { amount: 0, source: "", paid: "No" }])),
   goals: [
     { id: makeId(), name: "Obiettivo risparmio", target: 0, current: 0 }
-  ]
+  ],
+  contascatti: {
+    letturaIniziale: 0,
+    letturaAttuale: 0,
+    costoKwh: 0.30,
+    quotaFissa: 0,
+    obiettivoKwh: 250,
+    movimenti: []
+  }
 });
 
 const initialState = () => Object.fromEntries(MONTHS.map((m) => [m, emptyMonth()]));
@@ -96,7 +104,22 @@ const normalizeMonth = (monthData) => {
       name: goal.name || "Obiettivo risparmio",
       target: Number(goal.target) || 0,
       current: Number(goal.current) || 0
-    }))
+    })),
+    contascatti: {
+      ...base.contascatti,
+      ...(monthData?.contascatti || {}),
+      letturaIniziale: Number(monthData?.contascatti?.letturaIniziale) || 0,
+      letturaAttuale: Number(monthData?.contascatti?.letturaAttuale) || 0,
+      costoKwh: Number(monthData?.contascatti?.costoKwh) || 0.30,
+      quotaFissa: Number(monthData?.contascatti?.quotaFissa) || 0,
+      obiettivoKwh: Number(monthData?.contascatti?.obiettivoKwh) || 250,
+      movimenti: (monthData?.contascatti?.movimenti || []).map((item) => ({
+        id: item.id || makeId(),
+        date: item.date || "",
+        lettura: Number(item.lettura) || 0,
+        note: item.note || ""
+      }))
+    }
   };
 };
 
@@ -122,6 +145,7 @@ function App() {
   const [state, setState] = useState(loadState);
   const [month, setMonth] = useState(localStorage.getItem(MONTH_KEY) || "Giugno");
   const [cloudStatus, setCloudStatus] = useState(supabase ? "Connessione cloud..." : "Solo locale");
+  const [page, setPage] = useState("bilancio");
   const cloudReadyRef = useRef(false);
   const data = state[month];
 
@@ -223,30 +247,38 @@ function App() {
         updateYear={(year) => updateMonth((d) => (d.year = year))}
         resetCurrentMonth={resetCurrentMonth}
         cloudStatus={cloudStatus}
+        page={page}
+        setPage={setPage}
       />
 
-      <CloudToolsPanel state={state} result={result} cloudStatus={cloudStatus} data={data} />
-      <ManagerDashboard result={result} data={data} month={month} />
+      {page === "bilancio" ? (
+        <>
+          <CloudToolsPanel state={state} result={result} cloudStatus={cloudStatus} data={data} />
+          <ManagerDashboard result={result} data={data} month={month} />
 
-      <main className="dashboard-grid">
-        <FundsCard data={data} result={result} updateMonth={updateMonth} />
-        <BudgetCard data={data} result={result} updateMonth={updateMonth} />
-        <SummaryPanel result={result} />
+          <main className="dashboard-grid">
+            <FundsCard data={data} result={result} updateMonth={updateMonth} />
+            <BudgetCard data={data} result={result} updateMonth={updateMonth} />
+            <SummaryPanel result={result} />
 
-        <FixedCard data={data} result={result} updateMonth={updateMonth} />
-        <GuideCard />
-        <MovementsCard data={data} updateMonth={updateMonth} />
-        <InsightsPanel data={data} result={result} />
-        <GoalsPanel data={data} updateMonth={updateMonth} />
-        <CalendarPanel data={data} />
-        <FinancialCoachPanel result={result} />
-        <AnnualMiniPanel state={state} />
-      </main>
+            <FixedCard data={data} result={result} updateMonth={updateMonth} />
+            <GuideCard />
+            <MovementsCard data={data} updateMonth={updateMonth} />
+            <InsightsPanel data={data} result={result} />
+            <GoalsPanel data={data} updateMonth={updateMonth} />
+            <CalendarPanel data={data} />
+            <FinancialCoachPanel result={result} />
+            <AnnualMiniPanel state={state} />
+          </main>
+        </>
+      ) : (
+        <ContascattiPage data={data} month={month} updateMonth={updateMonth} />
+      )}
     </div>
   );
 }
 
-function Header({ month, setMonth, year, updateYear, resetCurrentMonth, cloudStatus }) {
+function Header({ month, setMonth, year, updateYear, resetCurrentMonth, cloudStatus, page, setPage }) {
   return (
     <header className="top-hero">
       <section className="brand-block">
@@ -256,6 +288,13 @@ function Header({ month, setMonth, year, updateYear, resetCurrentMonth, cloudSta
       </section>
 
       <section className="period-controls">
+        <div className="period-pill">
+          <span>SEZIONE</span>
+          <select value={page} onChange={(event) => setPage(event.target.value)}>
+            <option value="bilancio">Bilancio</option>
+            <option value="contascatti">Contascatti Enel</option>
+          </select>
+        </div>
         <div className="period-pill">
           <span>MESE</span>
           <select value={month} onChange={(event) => setMonth(event.target.value)}>
@@ -612,6 +651,218 @@ function FinancialCoachPanel({ result }) {
     </section>
   );
 }
+
+
+function ContascattiPage({ data, month, updateMonth }) {
+  const meter = data.contascatti || emptyMonth().contascatti;
+  const stats = calculateContascatti(meter);
+  const stato = stats.residuoKwh < 0 ? "Sforato" : stats.percentuale >= 90 ? "Attenzione" : "Ok";
+
+  const addReading = () => updateMonth((d) => {
+    const m = ensureMeter(d);
+    m.movimenti.push({
+      id: makeId(),
+      date: new Date().toLocaleDateString("it-IT"),
+      lettura: Number(m.letturaAttuale) || 0,
+      note: ""
+    });
+  });
+
+  return (
+    <>
+      <section className="control-center contascatti-control">
+        <div className={`control-main ${stato === "Sforato" ? "money-negative" : stato === "Attenzione" ? "money-low" : "money-good"}`}>
+          <div className="control-title">
+            <Zap size={24} />
+            <div>
+              <span>CONTASCATTI ENEL</span>
+              <strong>{stats.consumoKwh.toLocaleString("it-IT")} kWh</strong>
+              <small>Consumo del mese di {month}</small>
+            </div>
+          </div>
+
+          <div className="control-grid">
+            <div>
+              <span>Lettura iniziale</span>
+              <strong>{meter.letturaIniziale || 0}</strong>
+            </div>
+            <div>
+              <span>Lettura attuale</span>
+              <strong>{meter.letturaAttuale || 0}</strong>
+            </div>
+            <div>
+              <span>Costo stimato</span>
+              <strong>{euro(stats.costoStimato)}</strong>
+            </div>
+            <div>
+              <span>Stato consumi</span>
+              <strong className={stato === "Sforato" ? "danger" : stato === "Attenzione" ? "attention" : ""}>{stato}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="control-side contascatti-side-mini">
+          <div className="control-mini">
+            <Target size={21} />
+            <div>
+              <span>Obiettivo mese</span>
+              <strong>{meter.obiettivoKwh || 0} kWh</strong>
+              <small>Residuo: {stats.residuoKwh.toLocaleString("it-IT")} kWh</small>
+            </div>
+          </div>
+          <div className="control-mini">
+            <TrendingUp size={21} />
+            <div>
+              <span>Budget usato</span>
+              <strong>{stats.percentuale}%</strong>
+              <small>Rispetto all'obiettivo kWh</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <main className="contascatti-grid">
+        <section className="panel contascatti-panel">
+          <PanelTitle color="green" icon={<Zap />} title="Letture contascatti" subtitle="monitoraggio consumi Enel" />
+          <div className="meter-form">
+            <label>
+              <span>Lettura inizio mese</span>
+              <NumberField value={meter.letturaIniziale} onChange={(value) => updateMonth((d) => ensureMeter(d).letturaIniziale = value)} />
+            </label>
+            <label>
+              <span>Lettura attuale</span>
+              <NumberField value={meter.letturaAttuale} onChange={(value) => updateMonth((d) => ensureMeter(d).letturaAttuale = value)} />
+            </label>
+            <label>
+              <span>Costo €/kWh</span>
+              <NumberField value={meter.costoKwh} onChange={(value) => updateMonth((d) => ensureMeter(d).costoKwh = value)} />
+            </label>
+            <label>
+              <span>Quota fissa mese</span>
+              <NumberField value={meter.quotaFissa} onChange={(value) => updateMonth((d) => ensureMeter(d).quotaFissa = value)} />
+            </label>
+            <label>
+              <span>Obiettivo kWh mese</span>
+              <NumberField value={meter.obiettivoKwh} onChange={(value) => updateMonth((d) => ensureMeter(d).obiettivoKwh = value)} />
+            </label>
+          </div>
+
+          <div className="meter-summary-strip">
+            <div>
+              <span>Consumo mese</span>
+              <strong>{stats.consumoKwh.toLocaleString("it-IT")} kWh</strong>
+            </div>
+            <div>
+              <span>Residuo obiettivo</span>
+              <strong className={stats.residuoKwh < 0 ? "danger" : ""}>{stats.residuoKwh.toLocaleString("it-IT")} kWh</strong>
+            </div>
+            <div>
+              <span>Costo stimato</span>
+              <strong>{euro(stats.costoStimato)}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="panel contascatti-history-panel">
+          <PanelTitle color="blue" icon={<NotebookPen />} title="Storico letture" subtitle="salva le letture periodiche" />
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Lettura</th>
+                <th>Consumo</th>
+                <th>Note</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {(meter.movimenti || []).map((row) => {
+                const consumo = Math.max(0, (Number(row.lettura) || 0) - (Number(meter.letturaIniziale) || 0));
+                return (
+                  <tr key={row.id}>
+                    <td><TextField value={row.date} onChange={(value) => updateMonth((d) => findReading(ensureMeter(d), row.id).date = value)} /></td>
+                    <td><NumberField value={row.lettura} onChange={(value) => updateMonth((d) => findReading(ensureMeter(d), row.id).lettura = value)} /></td>
+                    <td className="money strong">{consumo.toLocaleString("it-IT")} kWh</td>
+                    <td><TextField value={row.note} placeholder="es. sera" onChange={(value) => updateMonth((d) => findReading(ensureMeter(d), row.id).note = value)} /></td>
+                    <td>
+                      <button className="icon-button" onClick={() => updateMonth((d) => ensureMeter(d).movimenti = ensureMeter(d).movimenti.filter((item) => item.id !== row.id))}>
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <button className="add-button" onClick={addReading}><Plus size={18} /> Aggiungi lettura</button>
+        </section>
+
+        <section className="insights-panel contascatti-analysis">
+          <div className="section-heading">
+            <BarChart3 size={20} />
+            <div>
+              <h3>Analisi consumi</h3>
+              <p>Capisci subito quanto stai consumando</p>
+            </div>
+          </div>
+
+          <div className="category-bars">
+            <div className="category-bar-row">
+              <div className="category-bar-title">
+                <span>Obiettivo kWh</span>
+                <strong>{stats.consumoKwh.toLocaleString("it-IT")} / {meter.obiettivoKwh || 0} kWh</strong>
+              </div>
+              <div className="wide-progress">
+                <div style={{ width: `${Math.min(100, stats.percentuale)}%` }} />
+              </div>
+              <small>{stats.percentuale}% usato</small>
+            </div>
+          </div>
+
+          <div className="smart-tip">
+            <Info size={18} />
+            <span>Costo stimato = kWh consumati × costo €/kWh + quota fissa.</span>
+          </div>
+        </section>
+
+        <section className="guide-panel contascatti-guide">
+          <h3>⚡ Come funziona</h3>
+          <ol>
+            <li>Inserisci la lettura del contatore a inizio mese.</li>
+            <li>Aggiorna la lettura attuale quando vuoi.</li>
+            <li>Il consumo è lettura attuale meno lettura iniziale.</li>
+            <li>Imposta costo €/kWh e quota fissa per stimare la bolletta.</li>
+            <li>Salva letture periodiche nello storico.</li>
+          </ol>
+        </section>
+      </main>
+    </>
+  );
+}
+
+function ensureMeter(data) {
+  if (!data.contascatti) data.contascatti = emptyMonth().contascatti;
+  if (!Array.isArray(data.contascatti.movimenti)) data.contascatti.movimenti = [];
+  return data.contascatti;
+}
+
+function findReading(meter, id) {
+  return meter.movimenti.find((item) => item.id === id);
+}
+
+function calculateContascatti(meter = {}) {
+  const start = Number(meter.letturaIniziale) || 0;
+  const current = Number(meter.letturaAttuale) || 0;
+  const costoKwh = Number(meter.costoKwh) || 0;
+  const quotaFissa = Number(meter.quotaFissa) || 0;
+  const obiettivo = Number(meter.obiettivoKwh) || 0;
+  const consumoKwh = Math.max(0, current - start);
+  const costoStimato = consumoKwh * costoKwh + quotaFissa;
+  const residuoKwh = obiettivo - consumoKwh;
+  const percentuale = obiettivo > 0 ? Math.round((consumoKwh / obiettivo) * 100) : 0;
+  return { consumoKwh, costoStimato, residuoKwh, percentuale };
+}
+
 
 function FundsCard({ data, result, updateMonth }) {
   return (
