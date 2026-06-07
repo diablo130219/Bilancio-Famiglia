@@ -2202,3 +2202,144 @@ body {
   background: rgba(255,255,255,.78);
   box-shadow: 0 12px 28px rgba(15, 23, 42, .06);
 }
+
+
+/* V13 Contascatti Enel */
+.contascatti-hero {
+  display: grid;
+  grid-template-columns: minmax(620px, 1.4fr) minmax(360px, .8fr);
+  gap: 18px;
+  margin: 0 0 22px;
+}
+
+.contascatti-main,
+.contascatti-side {
+  background: rgba(255, 255, 255, .78);
+  border: 1px solid rgba(255,255,255,.78);
+  border-radius: 24px;
+  box-shadow: var(--wow-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.contascatti-main {
+  padding: 20px;
+}
+
+.contascatti-main .control-title svg {
+  color: #0ea5e9;
+  background: #e0f2fe;
+}
+
+.contascatti-main.warning .control-title strong {
+  color: #c2410c;
+}
+
+.contascatti-main.danger .control-title strong {
+  color: #b91c1c;
+}
+
+.contascatti-side {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 14px;
+}
+
+.contascatti-grid {
+  display: grid;
+  grid-template-columns: minmax(520px, 1.1fr) minmax(520px, 1.2fr) minmax(360px, .8fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.contascatti-input-panel {
+  grid-column: span 1;
+}
+
+.contascatti-history-panel {
+  grid-column: span 1;
+}
+
+.contascatti-analysis-panel,
+.contascatti-guide {
+  grid-column: span 1;
+}
+
+.meter-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 18px;
+}
+
+.meter-form label {
+  display: grid;
+  gap: 8px;
+  font-weight: 900;
+  color: #0b345c;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.meter-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 16px;
+  border-top: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #f8fafc, rgba(255,255,255,.7));
+}
+
+.meter-summary-strip div {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.82);
+  border: 1px solid #e2e8f0;
+}
+
+.meter-summary-strip span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.meter-summary-strip strong {
+  display: block;
+  margin-top: 6px;
+  color: #0b345c;
+  font-size: 22px;
+}
+
+.period-controls {
+  grid-template-columns: repeat(3, minmax(130px, auto));
+}
+
+@media (max-width: 1500px) {
+  .contascatti-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .contascatti-analysis-panel,
+  .contascatti-guide {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 1100px) {
+  .contascatti-hero,
+  .contascatti-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contascatti-side,
+  .meter-form,
+  .meter-summary-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .period-controls {
+    grid-template-columns: 1fr;
+  }
+}
