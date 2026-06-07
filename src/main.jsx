@@ -301,9 +301,9 @@ function CloudToolsPanel({ state, result, cloudStatus, data }) {
         <div className="control-title">
           <CircleDollarSign size={24} />
           <div>
-            <span>Centro controllo mese</span>
+            <span>LIBERTÀ DEL MESE</span>
             <strong>{euro(result.freeMoney)}</strong>
-            <small>Disponibilità dopo budget residui e rate aperte</small>
+            <small>Quello che resterà a fine mese</small>
           </div>
         </div>
 
@@ -415,7 +415,7 @@ function ManagerDashboard({ result, data, month }) {
 
   return (
     <section className="manager-dashboard">
-      <ManagerCard icon={<Wallet />} label="Saldo fondi attuale" value={euro(result.totalCurrent)} tone={result.totalCurrent < 0 ? "red" : result.totalCurrent < 300 ? "yellow" : "green"} />
+      <ManagerCard icon={<Wallet />} label="FONDI DISPONIBILI ORA" value={euro(result.totalCurrent)} tone={result.totalCurrent < 0 ? "red" : result.totalCurrent < 300 ? "yellow" : "green"} />
       <ManagerCard icon={<CalendarCheck />} label="Giorni a fine mese" value={daysLeft} suffix="giorni" tone="blue" />
       <ManagerCard icon={<TrendingUp />} label="Budget consumato" value={`${budgetUsed}%`} tone={budgetUsed >= 90 ? "red" : budgetUsed >= 70 ? "yellow" : "green"} />
       <ManagerCard icon={<ReceiptText />} label="Impegni residui" value={euro(result.fixedToPay)} tone={result.fixedToPay > 0 ? "orange" : "green"} />
@@ -755,7 +755,7 @@ function SummaryPanel({ result }) {
 
       <div className="analysis-list">
         <div className="analysis-row">
-          <span>Rate ancora aperte</span>
+          <span>IMPEGNI FISSI RESIDUI</span>
           <strong>{euro(result.fixedToPay)}</strong>
           <small>Importi con Pagato = No</small>
         </div>
