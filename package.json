@@ -1,6 +1,6 @@
 {
   "name": "bilancio-famiglia-premium",
-  "version": "12.5.4-contascatti-consumo-giornaliero",
+  "version": "12.5.5-year-separated",
   "private": true,
   "type": "module",
   "scripts": {
