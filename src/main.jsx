@@ -440,13 +440,21 @@ function MonthlyOverview({ result }) {
 
 function CarryPanel({ month, year, result, carryToNextMonth }) {
   const next = MONTHS[(MONTHS.indexOf(month) + 1) % 12];
+  const hasPendingExpenses = result.totalReserved > 0.005;
   return (
     <section className="summary-card carry-card">
       <h2><ArrowRight size={20} /> Fine mese</h2>
-      <p>Quando hai finito {month}, puoi portare nel mese successivo solo i <strong>saldi reali rimasti</strong> nei fondi.</p>
-      <div className="carry-value"><span>Residuo reale complessivo</span><strong>{euro(result.totalCurrent)}</strong></div>
-      <button className="primary-btn wide" onClick={carryToNextMonth}>Porta i residui in {next}</button>
-      <small>Le vecchie spese e gli stanziamenti non vengono copiati: nel nuovo mese li inserirai di nuovo da zero.</small>
+      <p>Questo è quanto prevedi che resterà dopo aver coperto <strong>tutte le spese stanziate</strong> di {month}.</p>
+      <div className="carry-value"><span>Residuo previsto a fine mese</span><strong>{euro(result.freeToAssign)}</strong></div>
+      <div className="summary-line"><span>Saldo reale oggi</span><strong>{euro(result.totalCurrent)}</strong></div>
+      <button className="primary-btn wide" onClick={carryToNextMonth} disabled={hasPendingExpenses}>
+        {hasPendingExpenses ? `Prima completa le spese di ${month}` : `Porta i residui reali in ${next}`}
+      </button>
+      <small>
+        {hasPendingExpenses
+          ? `Hai ancora ${euro(result.totalReserved)} di spese previste da pagare. Il trasferimento si attiva quando sono tutte coperte.`
+          : `A mese chiuso verranno trasferiti i saldi reali rimasti nei singoli fondi. Le vecchie spese non vengono copiate.`}
+      </small>
     </section>
   );
 }
