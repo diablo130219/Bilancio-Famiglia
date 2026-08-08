@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { createClient } from "@supabase/supabase-js";
 import {
   Wallet, Plus, Trash2, Landmark, ReceiptText, PiggyBank,
   ArrowRight, CheckCircle2, CalendarDays, RotateCcw, Download,
@@ -12,6 +13,13 @@ const STORAGE_KEY = "bilancio-famiglia-zero-based-v2";
 const MONTH_KEY = "bilancio-famiglia-zero-based-month";
 const YEAR_KEY = "bilancio-famiglia-zero-based-year";
 const THEME_KEY = "bilancio-famiglia-theme";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabase = SUPABASE_URL && SUPABASE_ANON_KEY ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+// Riga separata dalla vecchia versione: evita di sovrascrivere lo storico legacy.
+const CLOUD_ROW_MONTH = "APP_STATE_ZERO_V2";
+const CLOUD_ROW_YEAR = 2026;
 
 const MONTHS = [
   "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
@@ -90,9 +98,53 @@ function loadStore() {
   }
 }
 
+function normalizeCloudStore(raw) {
+  const result = { years: {} };
+  if (!raw?.years || typeof raw.years !== "object") return result;
+  Object.entries(raw.years).forEach(([y, months]) => {
+    result.years[y] = makeYear();
+    MONTHS.forEach((m) => { result.years[y][m] = normalizeMonth(months?.[m]); });
+  });
+  return result;
+}
+
+function hasMeaningfulData(store) {
+  return Object.values(store?.years || {}).some((months) =>
+    MONTHS.some((m) => {
+      const d = months?.[m];
+      return (d?.funds?.length || 0) + (d?.allocations?.length || 0) + (d?.payments?.length || 0) > 0;
+    })
+  );
+}
+
+async function saveStoreToCloud(store, setCloudStatus) {
+  try {
+    setCloudStatus("Salvataggio cloud…");
+    const payload = { mese: CLOUD_ROW_MONTH, anno: CLOUD_ROW_YEAR, dati: store, updated_at: new Date().toISOString() };
+    const { data: existing, error: selectError } = await supabase
+      .from("bilanci").select("id")
+      .eq("mese", CLOUD_ROW_MONTH).eq("anno", CLOUD_ROW_YEAR)
+      .limit(1).maybeSingle();
+    if (selectError) throw selectError;
+    const response = existing?.id
+      ? await supabase.from("bilanci").update(payload).eq("id", existing.id)
+      : await supabase.from("bilanci").insert(payload);
+    if (response.error) throw response.error;
+    setCloudStatus("Cloud attivo");
+    return true;
+  } catch (error) {
+    console.error("Errore salvataggio Supabase:", error);
+    setCloudStatus("Errore cloud");
+    return false;
+  }
+}
+
 function App() {
   const now = new Date();
   const [store, setStore] = useState(loadStore);
+  const [cloudStatus, setCloudStatus] = useState(supabase ? "Connessione cloud…" : "Solo locale");
+  const cloudReadyRef = useRef(false);
+  const cloudFoundRef = useRef(false);
   const [month, setMonth] = useState(localStorage.getItem(MONTH_KEY) || MONTHS[now.getMonth()]);
   const [year, setYear] = useState(Number(localStorage.getItem(YEAR_KEY)) || now.getFullYear());
   const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || "dark");
@@ -107,6 +159,47 @@ function App() {
 
   const data = getMonth(store, year, month);
   const result = useMemo(() => calculateMonth(data), [data]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadCloud = async () => {
+      if (!supabase) { cloudReadyRef.current = true; return; }
+      try {
+        const { data: row, error } = await supabase
+          .from("bilanci").select("dati")
+          .eq("mese", CLOUD_ROW_MONTH).eq("anno", CLOUD_ROW_YEAR)
+          .limit(1).maybeSingle();
+        if (error) throw error;
+        if (cancelled) return;
+        if (row?.dati?.years) {
+          cloudFoundRef.current = true;
+          const cloudStore = normalizeCloudStore(row.dati);
+          setStore(cloudStore);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudStore));
+        }
+        cloudReadyRef.current = true;
+        setCloudStatus("Cloud attivo");
+      } catch (error) {
+        console.error("Errore caricamento Supabase:", error);
+        cloudReadyRef.current = true;
+        setCloudStatus("Errore cloud");
+      }
+    };
+    loadCloud();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    if (!supabase || !cloudReadyRef.current) return;
+    // Se il cloud V2 non esiste ancora, un dispositivo vuoto non deve inizializzarlo.
+    if (!cloudFoundRef.current && !hasMeaningfulData(store)) return;
+    const timer = setTimeout(async () => {
+      const ok = await saveStoreToCloud(store, setCloudStatus);
+      if (ok) cloudFoundRef.current = true;
+    }, 650);
+    return () => clearTimeout(timer);
+  }, [store]);
 
   const updateMonth = (updater) => {
     setStore((prev) => {
@@ -196,7 +289,7 @@ function App() {
       </aside>
 
       <main className="main-workspace" id="panoramica">
-        <Header month={month} setMonth={setMonth} year={year} setYear={setYear} resetMonth={resetMonth} />
+        <Header month={month} setMonth={setMonth} year={year} setYear={setYear} resetMonth={resetMonth} cloudStatus={cloudStatus} />
         <div id="fondi" className="dashboard-title"><span>FONDI DISPONIBILI</span><i></i></div>
         <section className="funds-dashboard">
           <aside className="funds-side funds-side-left">
@@ -229,7 +322,7 @@ function App() {
   );
 }
 
-function Header({ month, setMonth, year, setYear, resetMonth }) {
+function Header({ month, setMonth, year, setYear, resetMonth, cloudStatus }) {
   return (
     <header className="topbar">
       <div className="brand">
@@ -239,7 +332,7 @@ function Header({ month, setMonth, year, setYear, resetMonth }) {
           <p>Assegna ogni euro prima di spenderlo</p>
         </div>
       </div>
-      <div className="period-controls">
+      <div className="period-controls"><div className={`cloud-badge ${cloudStatus === "Cloud attivo" ? "ok" : cloudStatus === "Errore cloud" ? "error" : ""}`}><ShieldCheck size={15}/>{cloudStatus}</div>
         <label>
           <span>Mese</span>
           <select value={month} onChange={(e) => { setMonth(e.target.value); localStorage.setItem(MONTH_KEY, e.target.value); }}>
