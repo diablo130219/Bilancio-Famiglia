@@ -142,3 +142,56 @@ tfoot td { font-weight: 800; background: #f7fafc; }
   .quick-pay-row { grid-template-columns: 1fr; }
   .footer-tools { flex-direction: column; align-items: stretch; }
 }
+
+/* Schede spese compatte */
+.allocation-list { gap: 7px; padding: 9px; }
+.allocation-card { padding: 9px 10px 8px; border-radius: 11px; }
+.allocation-top { align-items: center; }
+.allocation-name { min-width: 0; }
+.bare-input { font-size: 14px; }
+.allocation-compact-row {
+  display: grid;
+  grid-template-columns: 110px 88px 88px minmax(220px, 1fr) 110px auto;
+  gap: 8px;
+  align-items: end;
+  margin-top: 7px;
+}
+.allocation-compact-row label { display: grid; gap: 3px; min-width: 0; }
+.allocation-compact-row label span,
+.allocation-compact-row .allocation-stat span { font-size: 10px; color: var(--muted); font-weight: 700; }
+.allocation-compact-row input,
+.allocation-compact-row select { width: 100%; height: 36px; border: 1px solid var(--line); border-radius: 9px; padding: 0 8px; background: white; color: var(--ink); }
+.allocation-compact-row .allocation-stat { min-height: 36px; }
+.allocation-compact-row .allocation-stat strong { font-size: 13px; }
+.allocation-compact-row .quick-pay-btn { min-height: 36px; height: 36px; padding: 0 11px; white-space: nowrap; }
+.paid-status {
+  grid-column: 4 / -1;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  color: var(--green);
+  font-weight: 800;
+  padding-right: 4px;
+}
+.compact-progress { height: 4px; margin-top: 7px; }
+
+@media (max-width: 1250px) {
+  .allocation-compact-row { grid-template-columns: 105px 82px 82px minmax(180px, 1fr) 100px auto; }
+}
+
+@media (max-width: 900px) {
+  .allocation-compact-row { grid-template-columns: 1fr 1fr 1fr; }
+  .compact-fund { grid-column: 1 / 3; }
+  .compact-amount { grid-column: 3; }
+  .allocation-compact-row .quick-pay-btn { grid-column: 1 / -1; }
+  .paid-status { grid-column: 1 / -1; justify-content: flex-start; }
+}
+
+@media (max-width: 560px) {
+  .allocation-compact-row { grid-template-columns: 1fr 1fr; }
+  .compact-planned { grid-column: 1; }
+  .compact-fund { grid-column: 1 / -1; }
+  .compact-amount { grid-column: 1 / -1; }
+}

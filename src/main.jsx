@@ -326,18 +326,21 @@ function AllocationsPanel({ data, result, updateMonth }) {
                 </div>
                 <button className="icon-btn" onClick={() => removeAllocation(a.id)}><Trash2 size={16} /></button>
               </div>
-              <div className="allocation-fields">
-                <label><span>Stanziato</span><MoneyInput value={a.planned} onChange={(v) => updateMonth((m) => { const x = m.allocations.find((z) => z.id === a.id); if (x) x.planned = v; })} /></label>
-                <div className="allocation-stat"><span>Stato</span><strong>{a.remaining <= 0.005 ? "Coperta" : "Da coprire"}</strong></div>
+              <div className="allocation-compact-row">
+                <label className="compact-planned"><span>Stanziato</span><MoneyInput value={a.planned} onChange={(v) => updateMonth((m) => { const x = m.allocations.find((z) => z.id === a.id); if (x) x.planned = v; })} /></label>
                 <div className="allocation-stat"><span>Pagato</span><strong>{euro(a.paid)}</strong></div>
                 <div className="allocation-stat"><span>Da pagare</span><strong>{euro(a.remaining)}</strong></div>
+                {a.remaining <= 0.005 ? (
+                  <div className="paid-status"><CheckCircle2 size={16} /> Pagata</div>
+                ) : (
+                  <>
+                    <label className="compact-fund"><span>Scala da entrata/fondo</span><select value={quickFunds[a.id] || ""} onChange={(e) => setQuickFunds((prev) => ({ ...prev, [a.id]: e.target.value }))}><option value="">Scegli da dove scalare</option>{result.funds.map((f) => <option key={f.id} value={f.id}>{f.name} · {euro(f.current)} disponibili</option>)}</select></label>
+                    <label className="compact-amount"><span>Importo</span><input type="number" step="0.01" min="0" max={a.remaining} placeholder={a.remaining > 0 ? euro(a.remaining) : "0,00 €"} value={quickAmounts[a.id] ?? ""} onChange={(e) => setQuickAmounts((prev) => ({ ...prev, [a.id]: e.target.value }))} /></label>
+                    <button className="pay-btn quick-pay-btn" onClick={() => quickPay(a)}><CheckCircle2 size={17} /> Scala / Paga</button>
+                  </>
+                )}
               </div>
-              <div className="quick-pay-row">
-                <label><span>Scala da entrata/fondo</span><select value={quickFunds[a.id] || ""} onChange={(e) => setQuickFunds((prev) => ({ ...prev, [a.id]: e.target.value }))}><option value="">Scegli da dove scalare</option>{result.funds.map((f) => <option key={f.id} value={f.id}>{f.name} · {euro(f.current)} disponibili</option>)}</select></label>
-                <label><span>Importo da scalare</span><input type="number" step="0.01" min="0" max={a.remaining} placeholder={a.remaining > 0 ? euro(a.remaining) : "0,00 €"} value={quickAmounts[a.id] ?? ""} onChange={(e) => setQuickAmounts((prev) => ({ ...prev, [a.id]: e.target.value }))} /></label>
-                <button className="pay-btn quick-pay-btn" disabled={a.remaining <= 0.005} onClick={() => quickPay(a)}><CheckCircle2 size={17} /> {a.remaining <= 0.005 ? "Pagata" : "Scala / Paga"}</button>
-              </div>
-              <div className="progress"><span style={{ width: `${Math.min(100, a.planned > 0 ? (a.paid / a.planned) * 100 : 0)}%` }} /></div>
+              {a.planned > 0 && <div className="progress compact-progress"><span style={{ width: `${Math.min(100, (a.paid / a.planned) * 100)}%` }} /></div>}
               {a.paid > a.planned + 0.005 && <div className="overrun">Superato lo stanziamento di {euro(a.paid - a.planned)}</div>}
             </article>
           ))}
