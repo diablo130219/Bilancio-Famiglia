@@ -151,13 +151,6 @@ function App() {
     <div className="app-shell">
       <Header month={month} setMonth={setMonth} year={year} setYear={setYear} resetMonth={resetMonth} />
 
-      <section className="hero-summary">
-        <Metric icon={Banknote} label="Disponibilità totale" value={euro(result.totalInitial)} tone="green" />
-        <Metric icon={Layers3} label="Già assegnato" value={euro(result.totalPlanned)} tone="blue" />
-        <Metric icon={CircleDollarSign} label="Libero da assegnare" value={euro(result.freeToAssign)} tone={result.freeToAssign < 0 ? "red" : "purple"} />
-        <Metric icon={ReceiptText} label="Già pagato" value={euro(result.totalPaid)} tone="orange" />
-      </section>
-
       <section className="explain-strip">
         <Info size={20} />
         <span>
@@ -165,9 +158,22 @@ function App() {
         </span>
       </section>
 
-      <div className="funds-center-wrap">
-        <FundsPanel data={data} result={result} updateMonth={updateMonth} />
-      </div>
+      <section className="funds-dashboard">
+        <aside className="funds-side funds-side-left">
+          <Metric icon={Banknote} label="Disponibilità totale" value={euro(result.totalInitial)} tone="green" />
+          <Metric icon={ReceiptText} label="Già pagato" value={euro(result.totalPaid)} tone="blue" />
+          <Metric icon={Layers3} label="Già impegnato" value={euro(result.totalPlanned)} tone="orange" />
+        </aside>
+
+        <div className="funds-center-wrap">
+          <FundsPanel data={data} result={result} updateMonth={updateMonth} />
+        </div>
+
+        <aside className="funds-side funds-side-right">
+          <Metric icon={CircleDollarSign} label="Disponibilità libera" value={euro(result.freeToAssign)} tone={result.freeToAssign < 0 ? "red" : "green"} />
+          <Metric icon={Landmark} label="Spese da coprire" value={euro(result.totalReserved)} tone="blue" />
+        </aside>
+      </section>
 
       <div className="allocations-full-wrap">
         <AllocationsPanel data={data} result={result} updateMonth={updateMonth} />
