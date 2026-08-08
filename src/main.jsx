@@ -165,8 +165,11 @@ function App() {
         </span>
       </section>
 
-      <div className="main-grid">
+      <div className="funds-center-wrap">
         <FundsPanel data={data} result={result} updateMonth={updateMonth} />
+      </div>
+
+      <div className="allocations-full-wrap">
         <AllocationsPanel data={data} result={result} updateMonth={updateMonth} />
       </div>
 

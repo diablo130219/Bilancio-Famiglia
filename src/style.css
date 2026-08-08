@@ -47,7 +47,9 @@ button { cursor: pointer; }
 .metric.red strong { color: var(--red); }
 
 .explain-strip { display: flex; align-items: center; gap: 10px; padding: 12px 15px; border-radius: 12px; background: #eef6ff; color: #2a5075; margin-bottom: 20px; font-size: 14px; }
-.main-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 18px; align-items: start; }
+.main-grid { display: grid; grid-template-columns: 1fr; gap: 18px; align-items: start; }
+.funds-center-wrap { width: min(1120px, 100%); margin: 0 auto 18px; }
+.allocations-full-wrap { width: 100%; margin-top: 0; }
 .panel, .summary-card { background: var(--card); border: 1px solid var(--line); border-radius: 17px; box-shadow: var(--shadow); overflow: hidden; }
 .panel-head { display: flex; align-items: center; gap: 11px; padding: 16px 18px; border-bottom: 1px solid var(--line); background: #fbfcfe; }
 .panel-head-icon { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; background: var(--blue-soft); color: var(--blue); }
@@ -81,7 +83,7 @@ tfoot td { font-weight: 800; background: #f7fafc; }
 .icon-btn:hover { background: var(--red-soft); color: var(--red); }
 
 .empty { display: flex; align-items: center; justify-content: center; gap: 9px; padding: 28px 16px; color: var(--muted); text-align: center; }
-.allocation-list { padding: 12px; display: grid; gap: 10px; }
+.allocation-list { padding: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: start; }
 .allocation-card { border: 1px solid var(--line); border-radius: 13px; padding: 12px; }
 .allocation-top { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
 .allocation-name { display: flex; align-items: center; gap: 8px; flex: 1; }
@@ -144,14 +146,14 @@ tfoot td { font-weight: 800; background: #f7fafc; }
 }
 
 /* Schede spese compatte */
-.allocation-list { gap: 7px; padding: 9px; }
+.allocation-list { gap: 9px; padding: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .allocation-card { padding: 9px 10px 8px; border-radius: 11px; }
 .allocation-top { align-items: center; }
 .allocation-name { min-width: 0; }
 .bare-input { font-size: 14px; }
 .allocation-compact-row {
   display: grid;
-  grid-template-columns: 110px 88px 88px minmax(220px, 1fr) 110px auto;
+  grid-template-columns: 96px 68px 78px minmax(145px, 1fr) 92px auto;
   gap: 8px;
   align-items: end;
   margin-top: 7px;
@@ -178,7 +180,7 @@ tfoot td { font-weight: 800; background: #f7fafc; }
 .compact-progress { height: 4px; margin-top: 7px; }
 
 @media (max-width: 1250px) {
-  .allocation-compact-row { grid-template-columns: 105px 82px 82px minmax(180px, 1fr) 100px auto; }
+  .allocation-compact-row { grid-template-columns: 90px 64px 72px minmax(125px, 1fr) 84px auto; }
 }
 
 @media (max-width: 900px) {
@@ -194,4 +196,29 @@ tfoot td { font-weight: 800; background: #f7fafc; }
   .compact-planned { grid-column: 1; }
   .compact-fund { grid-column: 1 / -1; }
   .compact-amount { grid-column: 1 / -1; }
+}
+
+
+/* Layout desktop: fondi centrali e spese su due colonne */
+.funds-center-wrap .panel { width: 100%; }
+.allocations-full-wrap .panel { width: 100%; }
+.allocations-full-wrap .allocation-card { min-width: 0; }
+.allocations-full-wrap .allocation-top { min-height: 30px; }
+.allocations-full-wrap .bare-input { font-size: 13.5px; }
+.allocations-full-wrap .mini-select { padding: 4px 7px; font-size: 10px; }
+.allocations-full-wrap .allocation-compact-row { gap: 6px; }
+.allocations-full-wrap .allocation-compact-row input,
+.allocations-full-wrap .allocation-compact-row select { height: 34px; font-size: 12px; }
+.allocations-full-wrap .allocation-compact-row .quick-pay-btn { height: 34px; min-height: 34px; padding: 0 9px; font-size: 12px; }
+.allocations-full-wrap .allocation-stat strong { font-size: 12.5px; }
+.allocations-full-wrap .paid-status { min-height: 34px; }
+
+@media (max-width: 1320px) {
+  .allocation-list { grid-template-columns: 1fr; }
+  .allocation-compact-row { grid-template-columns: 105px 82px 82px minmax(180px, 1fr) 100px auto; }
+}
+
+@media (max-width: 900px) {
+  .funds-center-wrap { width: 100%; }
+  .allocation-list { grid-template-columns: 1fr; }
 }
