@@ -566,3 +566,66 @@ tfoot td { padding-top: 11px; padding-bottom: 11px; font-weight: 800; background
 .theme-light .amber{color:#c97b00!important}.theme-light .emerald{color:#078f63!important}
 
 @media(max-width:1050px){.theme-light .app-sidebar{border-bottom-color:#dbe5ed!important}.theme-light .sidebar-bottom{display:flex;align-items:center;gap:10px;margin-top:12px}.theme-light .month-mini{display:none}.theme-dark .sidebar-bottom{display:flex;align-items:center;gap:10px;margin-top:12px}.theme-dark .month-mini{display:none}.sidebar-bottom .theme-toggle{max-width:210px}}
+
+/* ===== LIGHT THEME CONTRAST FIX ===== */
+.theme-light .bare-input,
+.theme-light .table-input,
+.theme-light .money-input {
+  background: transparent !important;
+  color: #17263a !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+.theme-light .bare-input:hover,
+.theme-light .table-input:hover,
+.theme-light .money-input:hover {
+  background: #f3f7fa !important;
+  color: #17263a !important;
+}
+.theme-light .bare-input:focus,
+.theme-light .table-input:focus,
+.theme-light .money-input:focus {
+  background: #ffffff !important;
+  color: #17263a !important;
+  border-color: #a8cfc0 !important;
+  box-shadow: 0 0 0 3px rgba(12,155,107,.10) !important;
+}
+.theme-light .allocation-name,
+.theme-light .allocation-name * {
+  color: #17263a;
+}
+.theme-light .allocation-name .bare-input {
+  background: transparent !important;
+  color: #17263a !important;
+}
+.theme-light .allocation-card:has(.paid-status) {
+  background: linear-gradient(180deg,#ffffff,#fbfefc) !important;
+  border-color: #d8e9df !important;
+}
+.theme-light .allocation-card:has(.allocation-register-hint) {
+  background: #ffffff !important;
+  border-color: #d9e6f2 !important;
+}
+.theme-light input[type="number"],
+.theme-light input[type="text"],
+.theme-light input[type="date"],
+.theme-light select {
+  color-scheme: light;
+}
+.theme-light .funds-center-wrap .table-input {
+  background: transparent !important;
+  color: #203146 !important;
+}
+.theme-light .funds-center-wrap .table-input:focus {
+  background: #ffffff !important;
+}
+.theme-light .allocation-list {
+  background: #f5f8fb !important;
+}
+.theme-light .allocation-card {
+  box-shadow: 0 7px 22px rgba(27,52,78,.055) !important;
+}
+.theme-light .allocation-card .quick-pay-btn,
+.theme-light .payments-panel .primary-btn {
+  color: #ffffff !important;
+}
