@@ -55,7 +55,7 @@ button { cursor: pointer; }
 .panel-head p { margin: 3px 0 0; color: var(--muted); font-size: 12.5px; }
 
 .entry-row { display: grid; grid-template-columns: 1.4fr .7fr auto; gap: 9px; padding: 14px; border-bottom: 1px solid var(--line); }
-.allocation-form { display: grid; grid-template-columns: 1.4fr .75fr .7fr 1fr auto; gap: 9px; padding: 14px; border-bottom: 1px solid var(--line); }
+.allocation-form { display: grid; grid-template-columns: 1.6fr .8fr .8fr auto; gap: 9px; padding: 14px; border-bottom: 1px solid var(--line); }
 .entry-row input, .allocation-form input, .allocation-form select, .payment-form input, .payment-form select, .allocation-fields input, .allocation-fields select { width: 100%; height: 42px; border: 1px solid var(--line); border-radius: 10px; padding: 0 10px; background: white; color: var(--ink); }
 .primary-btn, .pay-btn, .secondary-btn, .danger-btn { border: 0; border-radius: 10px; min-height: 42px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-weight: 800; }
 .primary-btn, .pay-btn { background: #176a53; color: white; }

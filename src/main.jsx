@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import "./style.css";
 
-const STORAGE_KEY = "bilancio-famiglia-zero-based-v1";
+const STORAGE_KEY = "bilancio-famiglia-zero-based-v2";
 const MONTH_KEY = "bilancio-famiglia-zero-based-month";
 const YEAR_KEY = "bilancio-famiglia-zero-based-year";
 
@@ -62,6 +62,7 @@ function normalizeMonth(raw) {
           id: p.id || makeId(),
           date: p.date || "",
           allocationId: p.allocationId || "",
+          fundId: p.fundId || "",
           amount: Number(p.amount) || 0,
           note: p.note || ""
         }))
@@ -160,7 +161,7 @@ function App() {
       <section className="explain-strip">
         <Info size={20} />
         <span>
-          I soldi <strong>assegnati</strong> sono già riservati alle spese del mese. Il saldo reale dei fondi cala solo quando registri un pagamento.
+          Prima <strong>stanzi</strong> quanto vuoi destinare alle spese. Solo quando paghi scegli da quale fondo scalare i soldi, in base alla disponibilità del momento.
         </span>
       </section>
 
@@ -232,8 +233,8 @@ function FundsPanel({ data, result, updateMonth }) {
   };
 
   const removeFund = (id) => {
-    const used = data.allocations.some((a) => a.fundId === id);
-    if (used) return alert("Questo fondo è usato da uno o più stanziamenti. Cambia prima la loro provenienza.");
+    const used = data.payments.some((p) => p.fundId === id);
+    if (used) return alert("Questo fondo è già stato usato in uno o più pagamenti. Elimina prima quei pagamenti.");
     updateMonth((m) => { m.funds = m.funds.filter((f) => f.id !== id); });
   };
 
@@ -249,21 +250,19 @@ function FundsPanel({ data, result, updateMonth }) {
       {data.funds.length === 0 ? <Empty text="Nessun fondo inserito. Tutto parte da 0." /> : (
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Fondo</th><th>Inizio mese</th><th>Riservato</th><th>Pagato</th><th>Saldo reale</th><th>Libero</th><th></th></tr></thead>
+            <thead><tr><th>Fondo</th><th>Inizio mese</th><th>Pagato</th><th>Disponibile ora</th><th></th></tr></thead>
             <tbody>
               {result.funds.map((f) => (
                 <tr key={f.id}>
                   <td><input className="table-input name-input" value={f.name} onChange={(e) => updateMonth((m) => { const x = m.funds.find((z) => z.id === f.id); if (x) x.name = e.target.value; })} /></td>
                   <td><MoneyInput value={f.amount} onChange={(v) => updateMonth((m) => { const x = m.funds.find((z) => z.id === f.id); if (x) x.amount = v; })} /></td>
-                  <td className="money muted-money">{euro(f.reserved)}</td>
                   <td className="money">{euro(f.paid)}</td>
-                  <td className="money strong">{euro(f.current)}</td>
-                  <td className={`money strong ${f.free < -0.005 ? "negative" : "positive"}`}>{euro(f.free)}</td>
+                  <td className={`money strong ${f.current < -0.005 ? "negative" : "positive"}`}>{euro(f.current)}</td>
                   <td><button className="icon-btn" onClick={() => removeFund(f.id)} title="Elimina"><Trash2 size={16} /></button></td>
                 </tr>
               ))}
             </tbody>
-            <tfoot><tr><td>Totale</td><td>{euro(result.totalInitial)}</td><td>{euro(result.totalReserved)}</td><td>{euro(result.totalPaid)}</td><td>{euro(result.totalCurrent)}</td><td>{euro(result.freeToAssign)}</td><td></td></tr></tfoot>
+            <tfoot><tr><td>Totale</td><td>{euro(result.totalInitial)}</td><td>{euro(result.totalPaid)}</td><td>{euro(result.totalCurrent)}</td><td></td></tr></tfoot>
           </table>
         </div>
       )}
@@ -275,12 +274,11 @@ function AllocationsPanel({ data, result, updateMonth }) {
   const [name, setName] = useState("");
   const [type, setType] = useState("Spesa fissa");
   const [planned, setPlanned] = useState("");
-  const [fundId, setFundId] = useState("");
 
   const addAllocation = () => {
     if (!name.trim()) return;
-    updateMonth((m) => m.allocations.push({ id: makeId(), name: name.trim(), type, planned: Number(planned) || 0, fundId }));
-    setName(""); setPlanned(""); setFundId("");
+    updateMonth((m) => m.allocations.push({ id: makeId(), name: name.trim(), type, planned: Number(planned) || 0, fundId: "" }));
+    setName(""); setPlanned("");
   };
 
   const removeAllocation = (id) => {
@@ -294,15 +292,11 @@ function AllocationsPanel({ data, result, updateMonth }) {
 
   return (
     <section className="panel">
-      <PanelHead icon={Landmark} title="2. Spese da coprire" subtitle="Decidi prima quanto destinare e da quale fondo" />
+      <PanelHead icon={Landmark} title="2. Spese da coprire" subtitle="Stanzia gli importi ora; sceglierai il fondo solo quando paghi" />
       <div className="allocation-form">
         <input placeholder="Es. Mutuo, Alimentari, Benzina…" value={name} onChange={(e) => setName(e.target.value)} />
         <select value={type} onChange={(e) => setType(e.target.value)}>{TYPES.map((t) => <option key={t}>{t}</option>)}</select>
         <input type="number" step="0.01" min="0" placeholder="Stanziato €" value={planned} onChange={(e) => setPlanned(e.target.value)} />
-        <select value={fundId} onChange={(e) => setFundId(e.target.value)}>
-          <option value="">Da quale fondo?</option>
-          {data.funds.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-        </select>
         <button className="primary-btn" onClick={addAllocation}><Plus size={17} /> Aggiungi</button>
       </div>
 
@@ -319,7 +313,7 @@ function AllocationsPanel({ data, result, updateMonth }) {
               </div>
               <div className="allocation-fields">
                 <label><span>Stanziato</span><MoneyInput value={a.planned} onChange={(v) => updateMonth((m) => { const x = m.allocations.find((z) => z.id === a.id); if (x) x.planned = v; })} /></label>
-                <label><span>Prelevato da</span><select value={a.fundId} onChange={(e) => updateMonth((m) => { const x = m.allocations.find((z) => z.id === a.id); if (x) x.fundId = e.target.value; })}><option value="">Non assegnato</option>{data.funds.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}</select></label>
+                <div className="allocation-stat"><span>Stato</span><strong>{a.remaining <= 0.005 ? "Coperta" : "Da coprire"}</strong></div>
                 <div className="allocation-stat"><span>Pagato</span><strong>{euro(a.paid)}</strong></div>
                 <div className="allocation-stat"><span>Da pagare</span><strong>{euro(a.remaining)}</strong></div>
               </div>
@@ -338,16 +332,21 @@ function PaymentsPanel({ data, result, updateMonth }) {
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(todayLocal());
   const [note, setNote] = useState("");
+  const [fundId, setFundId] = useState("");
 
   const selected = data.allocations.find((a) => a.id === allocationId);
-  const selectedFund = selected ? data.funds.find((f) => f.id === selected.fundId) : null;
+  const selectedFund = data.funds.find((f) => f.id === fundId);
+  const selectedFundResult = result.funds.find((f) => f.id === fundId);
 
   const addPayment = () => {
     if (!selected) return alert("Scegli prima la spesa da pagare.");
-    if (!selected.fundId) return alert("Questa spesa non ha ancora un fondo assegnato.");
+    if (!selectedFund) return alert("Scegli da quale fondo scalare questo pagamento.");
     const val = Number(amount) || 0;
     if (val <= 0) return;
-    updateMonth((m) => m.payments.push({ id: makeId(), date, allocationId, amount: val, note: note.trim() }));
+    if (selectedFundResult && val > selectedFundResult.current + 0.005) {
+      return alert(`Nel fondo ${selectedFund.name} hai ${euro(selectedFundResult.current)} disponibili. Scegli un altro fondo oppure registra un importo più basso.`);
+    }
+    updateMonth((m) => m.payments.push({ id: makeId(), date, allocationId, fundId, amount: val, note: note.trim() }));
     setAmount(""); setNote("");
   };
 
@@ -355,13 +354,13 @@ function PaymentsPanel({ data, result, updateMonth }) {
 
   return (
     <section className="panel payments-panel">
-      <PanelHead icon={ReceiptText} title="3. Registra una spesa o una rata" subtitle="Il pagamento scala automaticamente dal fondo assegnato" />
+      <PanelHead icon={ReceiptText} title="3. Registra una spesa o una rata" subtitle="Quando paghi scegli da quale fondo scalare l’importo" />
       <div className="payment-form">
         <label><span>Data</span><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
         <label><span>Voce</span><select value={allocationId} onChange={(e) => setAllocationId(e.target.value)}><option value="">Scegli spesa</option>{data.allocations.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
         <label><span>Importo</span><input type="number" step="0.01" min="0" placeholder="0,00 €" value={amount} onChange={(e) => setAmount(e.target.value)} /></label>
         <label><span>Nota</span><input placeholder="Facoltativa" value={note} onChange={(e) => setNote(e.target.value)} /></label>
-        <div className="source-preview"><span>Scala da</span><strong>{selectedFund?.name || "—"}</strong></div>
+        <label><span>Scala da</span><select value={fundId} onChange={(e) => setFundId(e.target.value)}><option value="">Scegli fondo</option>{result.funds.map((f) => <option key={f.id} value={f.id}>{f.name} · {euro(f.current)} disponibili</option>)}</select></label>
         <button className="pay-btn" onClick={addPayment}><CheckCircle2 size={18} /> Registra pagamento</button>
       </div>
 
@@ -444,7 +443,8 @@ function calculateMonth(data) {
   data.payments.forEach((p) => {
     paidByAllocation[p.allocationId] = (paidByAllocation[p.allocationId] || 0) + (Number(p.amount) || 0);
     const allocation = data.allocations.find((a) => a.id === p.allocationId);
-    if (allocation?.fundId) paidByFund[allocation.fundId] = (paidByFund[allocation.fundId] || 0) + (Number(p.amount) || 0);
+    const sourceFundId = p.fundId || allocation?.fundId || "";
+    if (sourceFundId) paidByFund[sourceFundId] = (paidByFund[sourceFundId] || 0) + (Number(p.amount) || 0);
   });
 
   const allocations = data.allocations.map((a) => {
@@ -459,12 +459,8 @@ function calculateMonth(data) {
 
   const funds = data.funds.map((f) => {
     const paid = paidByFund[f.id] || 0;
-    const reserved = allocations
-      .filter((a) => a.fundId === f.id)
-      .reduce((sum, a) => sum + a.remaining, 0);
     const current = (Number(f.amount) || 0) - paid;
-    const free = current - reserved;
-    return { ...f, paid, reserved, current, free };
+    return { ...f, paid, current };
   });
 
   const totalInitial = funds.reduce((s, f) => s + (Number(f.amount) || 0), 0);
@@ -477,7 +473,7 @@ function calculateMonth(data) {
   const payments = [...data.payments]
     .map((p) => {
       const allocation = data.allocations.find((a) => a.id === p.allocationId);
-      const fund = data.funds.find((f) => f.id === allocation?.fundId);
+      const fund = data.funds.find((f) => f.id === (p.fundId || allocation?.fundId));
       return { ...p, allocationName: allocation?.name || "Voce eliminata", fundName: fund?.name || "—" };
     })
     .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
@@ -500,7 +496,7 @@ function formatDate(value) {
 }
 
 function downloadBackup(store) {
-  const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), app: "Bilancio Famiglia", version: "zero-based-v1", data: store }, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), app: "Bilancio Famiglia", version: "zero-based-v2", data: store }, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
