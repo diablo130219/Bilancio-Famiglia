@@ -633,3 +633,127 @@ tfoot td { padding-top: 11px; padding-bottom: 11px; font-weight: 800; background
 .cloud-badge.ok{background:rgba(34,197,94,.12);color:#22c55e;border-color:rgba(34,197,94,.22)}
 .cloud-badge.error{background:rgba(239,68,68,.12);color:#ef4444;border-color:rgba(239,68,68,.22)}
 .theme-light .cloud-badge{background:#eef6ff;color:#2563eb;border-color:#dbeafe}.theme-light .cloud-badge.ok{background:#ecfdf3;color:#15803d;border-color:#bbf7d0}.theme-light .cloud-badge.error{background:#fef2f2;color:#dc2626;border-color:#fecaca}
+
+/* ===== THEME COHERENCE PASS — DARK + LIGHT ===== */
+/* Dark: no light surfaces leaking from the legacy/base stylesheet. */
+.theme-dark .panel-head {
+  background: linear-gradient(180deg,#0a1d2d 0%,#071725 100%) !important;
+  border-bottom-color:#17384c !important;
+}
+.theme-dark .panel-head h2 { color:#f4f8fc !important; }
+.theme-dark .panel-head p { color:#8fa4b6 !important; }
+.theme-dark .payments-panel .panel-head {
+  background: linear-gradient(90deg,rgba(9,35,43,.98),rgba(7,23,37,.98)) !important;
+}
+.theme-dark .funds-center-wrap .panel,
+.theme-dark .payments-panel,
+.theme-dark .allocations-full-wrap .panel,
+.theme-dark .bottom-grid .summary-card {
+  background: linear-gradient(180deg,#081b2a 0%,#061521 100%) !important;
+}
+.theme-dark .entry-row,
+.theme-dark .allocation-form,
+.theme-dark .payment-form,
+.theme-dark .allocation-list {
+  background:#061725 !important;
+  border-color:#17384c !important;
+}
+.theme-dark .payment-form label > span,
+.theme-dark .allocation-compact-row label > span,
+.theme-dark .allocation-stat > span { color:#8da4b6 !important; }
+.theme-dark .small-empty,
+.theme-dark .empty {
+  background:#071a29 !important;
+  color:#8fa5b6 !important;
+  border-color:#173a4f !important;
+}
+.theme-dark .history-toolbar {
+  background:linear-gradient(180deg,#081b2a,#061725) !important;
+  border-top:1px solid #17384c !important;
+  border-bottom:1px solid #17384c !important;
+  color:#dce8f1 !important;
+}
+.theme-dark .history-toolbar > strong { color:#eaf3fa !important; }
+.theme-dark .history-filters select {
+  background:#0a1d2d !important;
+  border-color:#24475e !important;
+  color:#eef6fc !important;
+}
+.theme-dark table { background:#071827 !important; }
+.theme-dark thead th {
+  background:#0a2031 !important;
+  color:#91a8b9 !important;
+  border-color:#17384c !important;
+}
+.theme-dark tbody td { border-color:#173347 !important; }
+.theme-dark tbody tr:hover { background:#0a2030 !important; }
+.theme-dark tfoot td {
+  background:#0a2030 !important;
+  color:#f4f8fc !important;
+  border-color:#17384c !important;
+}
+.theme-dark .table-wrap { background:#071827 !important; }
+.theme-dark .table-input,
+.theme-dark .bare-input,
+.theme-dark .money-input {
+  background:#081827 !important;
+  color:#f4f8fc !important;
+  border-color:#214156 !important;
+}
+.theme-dark input[type="number"],
+.theme-dark input[type="text"],
+.theme-dark input[type="date"],
+.theme-dark select { color-scheme:dark; }
+.theme-dark .allocation-card {
+  background:linear-gradient(145deg,#091c2b,#071622) !important;
+  border-color:#1a3a4f !important;
+}
+.theme-dark .allocation-name,
+.theme-dark .allocation-name * { color:#f4f8fc; }
+.theme-dark .mini-select { background:#0d2637 !important; color:#a9c1d2 !important; }
+.theme-dark .paid-status { background:rgba(19,229,140,.07) !important; }
+.theme-dark .carry-value { background:#081b2a !important; }
+
+/* Light: keep history and all secondary bars airy; never reuse the dark strip. */
+.theme-light .history-toolbar {
+  background:linear-gradient(180deg,#f7fafc 0%,#f1f6f9 100%) !important;
+  border-top:1px solid #dce6ed !important;
+  border-bottom:1px solid #dce6ed !important;
+  color:#32465d !important;
+}
+.theme-light .history-toolbar > strong { color:#263b51 !important; }
+.theme-light .history-filters select {
+  background:#ffffff !important;
+  border-color:#d5e1e9 !important;
+  color:#263b51 !important;
+  box-shadow:0 2px 8px rgba(31,57,81,.035) !important;
+}
+.theme-light .payments-panel .panel-head {
+  background:linear-gradient(180deg,#ffffff,#f7fbf9) !important;
+}
+.theme-light .payments-panel .panel-head h2 { color:#087c59 !important; }
+.theme-light .payments-panel,
+.theme-light .allocations-full-wrap .panel {
+  background:#ffffff !important;
+}
+.theme-light .table-wrap { background:#ffffff !important; }
+.theme-light thead th {
+  background:#f4f8fa !important;
+  color:#65798d !important;
+}
+.theme-light tfoot td {
+  background:#f3faf7 !important;
+  color:#1e3447 !important;
+}
+.theme-light .history-table tbody tr:hover { background:#f7fbfd !important; }
+.theme-light .history-table tbody td { color:#2b3e52 !important; }
+.theme-light .history-table .icon-btn {
+  background:#f5f8fa !important;
+  border-color:#dbe5ec !important;
+}
+
+/* Both themes: soften the visual transition between registration and expense list. */
+#registra,
+.allocations-full-wrap { scroll-margin-top:18px; }
+.theme-dark #registra + .allocations-full-wrap { margin-top:18px; }
+.theme-light #registra + .allocations-full-wrap { margin-top:18px; }
