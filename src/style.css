@@ -293,3 +293,17 @@ tfoot td { font-weight: 800; background: #f7fafc; }
 .coherence-box.error{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}
 .small-empty{margin-top:8px;padding:10px 12px}
 @media (max-width: 900px){.history-filters{width:100%}.history-filters select{flex:1;min-width:145px}.editing-row td{min-width:130px}}
+
+.allocation-register-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.08);
+  color: #2563eb;
+  font-size: 0.86rem;
+  font-weight: 700;
+  white-space: nowrap;
+}

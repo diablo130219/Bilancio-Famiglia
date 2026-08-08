@@ -361,6 +361,8 @@ function AllocationsPanel({ data, result, updateMonth }) {
                 <div className="allocation-stat"><span>Da pagare</span><strong>{euro(a.remaining)}</strong></div>
                 {a.remaining <= 0.005 ? (
                   <div className="paid-status"><CheckCircle2 size={16} /> Pagata</div>
+                ) : a.type === "Stanziamento" ? (
+                  <div className="allocation-register-hint"><ReceiptText size={16} /> Scala dal Registro spese</div>
                 ) : (
                   <>
                     <label className="compact-fund"><span>Scala da entrata/fondo</span><select value={quickFunds[a.id] || ""} onChange={(e) => setQuickFunds((prev) => ({ ...prev, [a.id]: e.target.value }))}><option value="">Scegli da dove scalare</option>{result.funds.map((f) => <option key={f.id} value={f.id}>{f.name} · {euro(f.current)} disponibili</option>)}</select></label>
@@ -390,8 +392,9 @@ function PaymentsPanel({ data, result, updateMonth }) {
   const [filterFund, setFilterFund] = useState("");
   const [filterVoice, setFilterVoice] = useState("");
 
+  const spendableAllocations = data.allocations.filter((a) => a.type === "Stanziamento");
   const isOther = allocationId === OTHER_PAYMENT_ID;
-  const selected = data.allocations.find((a) => a.id === allocationId);
+  const selected = spendableAllocations.find((a) => a.id === allocationId);
   const selectedFund = data.funds.find((f) => f.id === fundId);
   const selectedFundResult = result.funds.find((f) => f.id === fundId);
 
@@ -472,15 +475,18 @@ function PaymentsPanel({ data, result, updateMonth }) {
 
   return (
     <section className="panel payments-panel">
-      <PanelHead icon={ReceiptText} title="3. Registra una spesa o una rata" subtitle="Quando paghi scegli da quale fondo scalare l’importo" />
+      <PanelHead icon={ReceiptText} title="3. Registra una spesa" subtitle="Qui trovi solo gli stanziamenti da scalare nel tempo, più ALTRO" />
       <div className="payment-form">
         <label><span>Data</span><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
-        <label><span>Voce</span><select value={allocationId} onChange={(e) => setAllocationId(e.target.value)}><option value="">Scegli spesa</option><option value={OTHER_PAYMENT_ID}>ALTRO</option>{data.allocations.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
+        <label><span>Voce</span><select value={allocationId} onChange={(e) => setAllocationId(e.target.value)}><option value="">Scegli stanziamento</option>{spendableAllocations.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}<option value={OTHER_PAYMENT_ID}>ALTRO</option></select></label>
         <label><span>Importo</span><input type="number" step="0.01" min="0" placeholder="0,00 €" value={amount} onChange={(e) => setAmount(e.target.value)} /></label>
         <label><span>Nota</span><input placeholder={isOther ? "Es. Farmacia, regalo, parcheggio…" : "Facoltativa"} value={note} onChange={(e) => setNote(e.target.value)} /></label>
         <label><span>Scala da</span><select value={fundId} onChange={(e) => setFundId(e.target.value)}><option value="">Scegli fondo</option>{result.funds.map((f) => <option key={f.id} value={f.id}>{f.name} · {euro(f.current)} disponibili</option>)}</select></label>
-        <button className="pay-btn" onClick={addPayment}><CheckCircle2 size={18} /> Registra pagamento</button>
+        <button className="pay-btn" onClick={addPayment}><CheckCircle2 size={18} /> Registra spesa</button>
       </div>
+      {spendableAllocations.length === 0 && (
+        <div className="empty small-empty"><Info size={18} /><span>Non hai ancora voci di tipo “Stanziamento”. Le rate e le spese fisse si pagano direttamente nella sezione “Spese da coprire”. Puoi comunque usare ALTRO.</span></div>
+      )}
 
       {result.payments.length === 0 ? <Empty text="Nessun pagamento registrato in questo mese." /> : (
         <>
