@@ -128,7 +128,7 @@ function App() {
       alert("Non ci sono residui positivi da portare al mese successivo.");
       return;
     }
-    if (!confirm(`Portare i residui reali di ${month} in ${nextMonth} ${nextYear}? Le spese non verranno copiate.`)) return;
+    if (!confirm(`Chiudere ${month} e preparare ${nextMonth} ${nextYear}? Verranno portati i saldi reali dei fondi e tutte le voci di spesa con importo 0 €.`)) return;
 
     setStore((prev) => {
       const next = structuredClone(prev);
@@ -140,11 +140,30 @@ function App() {
         if (existing) existing.amount += f.current;
         else target.funds.push({ id: makeId(), name: f.name, amount: f.current });
       });
+
+      // Riporta nel nuovo mese tutte le voci usate nel mese appena chiuso,
+      // ma azzera gli importi e non collega alcun fondo. In questo modo
+      // l'utente ritrova l'elenco pronto e decide ogni mese i nuovi importi.
+      data.allocations.forEach((a) => {
+        const existing = target.allocations.find(
+          (x) => x.name.trim().toLowerCase() === a.name.trim().toLowerCase()
+        );
+        if (!existing) {
+          target.allocations.push({
+            id: makeId(),
+            name: a.name,
+            type: a.type,
+            planned: 0,
+            fundId: ""
+          });
+        }
+      });
+
       next.years[y][nextMonth] = target;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       return next;
     });
-    alert(`Residui portati in ${nextMonth} ${nextYear}.`);
+    alert(`${nextMonth} ${nextYear} è pronto: residui dei fondi trasferiti e voci di spesa riportate a 0 €.`);
   };
 
   return (
