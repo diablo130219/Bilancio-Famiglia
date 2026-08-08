@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import {
   Wallet, Plus, Trash2, Landmark, ReceiptText, PiggyBank,
   ArrowRight, CheckCircle2, CalendarDays, RotateCcw, Download,
-  Coins, CircleDollarSign, Banknote, Layers3, Info
+  Coins, CircleDollarSign, Banknote, Layers3, Info, Pencil, Undo2, ShieldCheck, AlertTriangle
 } from "lucide-react";
 import "./style.css";
 
@@ -385,6 +385,10 @@ function PaymentsPanel({ data, result, updateMonth }) {
   const [date, setDate] = useState(todayLocal());
   const [note, setNote] = useState("");
   const [fundId, setFundId] = useState("");
+  const [editingId, setEditingId] = useState("");
+  const [editDraft, setEditDraft] = useState(null);
+  const [filterFund, setFilterFund] = useState("");
+  const [filterVoice, setFilterVoice] = useState("");
 
   const isOther = allocationId === OTHER_PAYMENT_ID;
   const selected = data.allocations.find((a) => a.id === allocationId);
@@ -395,15 +399,76 @@ function PaymentsPanel({ data, result, updateMonth }) {
     if (!selected && !isOther) return alert("Scegli prima la spesa da pagare.");
     if (!selectedFund) return alert("Scegli da quale fondo scalare questo pagamento.");
     const val = Number(amount) || 0;
-    if (val <= 0) return;
+    if (val <= 0) return alert("Inserisci un importo maggiore di 0 €.");
+    if (!isOther) {
+      const allocationResult = result.allocations.find((a) => a.id === allocationId);
+      if (allocationResult && val > allocationResult.remaining + 0.005) {
+        return alert(`Per ${allocationResult.name} restano da pagare ${euro(allocationResult.remaining)}.`);
+      }
+    }
     if (selectedFundResult && val > selectedFundResult.current + 0.005) {
-      return alert(`Nel fondo ${selectedFund.name} hai ${euro(selectedFundResult.current)} disponibili. Scegli un altro fondo oppure registra un importo più basso.`);
+      return alert(`Disponibilità insufficiente. Nel fondo ${selectedFund.name} hai ${euro(selectedFundResult.current)}, ma stai tentando di scalare ${euro(val)}.`);
     }
     updateMonth((m) => m.payments.push({ id: makeId(), date, allocationId, fundId, amount: val, note: note.trim() }));
     setAmount(""); setNote("");
   };
 
-  const removePayment = (id) => updateMonth((m) => { m.payments = m.payments.filter((p) => p.id !== id); });
+  const startEdit = (payment) => {
+    setEditingId(payment.id);
+    setEditDraft({
+      date: payment.date,
+      allocationId: payment.allocationId,
+      fundId: payment.fundId,
+      amount: payment.amount,
+      note: payment.note || ""
+    });
+  };
+
+  const saveEdit = () => {
+    const old = data.payments.find((p) => p.id === editingId);
+    if (!old || !editDraft) return;
+    const val = Number(editDraft.amount) || 0;
+    if (val <= 0) return alert("Inserisci un importo maggiore di 0 €.");
+    const targetFund = result.funds.find((f) => f.id === editDraft.fundId);
+    if (!targetFund) return alert("Scegli il fondo da cui scalare il pagamento.");
+
+    const availableForEdit = targetFund.current + (old.fundId === editDraft.fundId ? Number(old.amount) || 0 : 0);
+    if (val > availableForEdit + 0.005) {
+      return alert(`Disponibilità insufficiente. Nel fondo ${targetFund.name} puoi usare al massimo ${euro(availableForEdit)} per questa modifica.`);
+    }
+
+    if (editDraft.allocationId !== OTHER_PAYMENT_ID) {
+      const targetAllocation = result.allocations.find((a) => a.id === editDraft.allocationId);
+      if (!targetAllocation) return alert("La spesa selezionata non esiste più.");
+      const reusableOldAmount = old.allocationId === editDraft.allocationId ? Number(old.amount) || 0 : 0;
+      const maxAllowed = targetAllocation.remaining + reusableOldAmount;
+      if (val > maxAllowed + 0.005) {
+        return alert(`Per ${targetAllocation.name} puoi registrare al massimo ${euro(maxAllowed)}.`);
+      }
+    }
+
+    updateMonth((m) => {
+      const p = m.payments.find((x) => x.id === editingId);
+      if (p) Object.assign(p, { ...editDraft, amount: val, note: (editDraft.note || "").trim() });
+    });
+    setEditingId("");
+    setEditDraft(null);
+  };
+
+  const cancelEdit = () => { setEditingId(""); setEditDraft(null); };
+
+  const undoPayment = (id) => {
+    const payment = result.payments.find((p) => p.id === id);
+    if (!payment) return;
+    if (!confirm(`Annullare il pagamento di ${euro(payment.amount)} per ${payment.allocationName}? L'importo tornerà disponibile nel fondo ${payment.fundName}.`)) return;
+    updateMonth((m) => { m.payments = m.payments.filter((p) => p.id !== id); });
+  };
+
+  const filteredPayments = result.payments.filter((p) => {
+    const fundOk = !filterFund || p.fundId === filterFund;
+    const voiceOk = !filterVoice || p.allocationId === filterVoice;
+    return fundOk && voiceOk;
+  });
 
   return (
     <section className="panel payments-panel">
@@ -418,29 +483,61 @@ function PaymentsPanel({ data, result, updateMonth }) {
       </div>
 
       {result.payments.length === 0 ? <Empty text="Nessun pagamento registrato in questo mese." /> : (
-        <div className="table-wrap">
-          <table>
-            <thead><tr><th>Data</th><th>Spesa</th><th>Fondo</th><th>Nota</th><th>Importo</th><th></th></tr></thead>
-            <tbody>
-              {result.payments.map((p) => (
-                <tr key={p.id}>
-                  <td>{formatDate(p.date)}</td>
-                  <td className="strong">{p.allocationName}</td>
-                  <td>{p.fundName}</td>
-                  <td>{p.note || "—"}</td>
-                  <td className="money strong">{euro(p.amount)}</td>
-                  <td><button className="icon-btn" onClick={() => removePayment(p.id)}><Trash2 size={16} /></button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <div className="history-toolbar">
+            <strong>Storico pagamenti</strong>
+            <div className="history-filters">
+              <select value={filterVoice} onChange={(e) => setFilterVoice(e.target.value)}>
+                <option value="">Tutte le voci</option>
+                <option value={OTHER_PAYMENT_ID}>ALTRO</option>
+                {data.allocations.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </select>
+              <select value={filterFund} onChange={(e) => setFilterFund(e.target.value)}>
+                <option value="">Tutti i fondi</option>
+                {data.funds.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+              </select>
+              {(filterVoice || filterFund) && <button className="secondary-btn compact-btn" onClick={() => { setFilterVoice(""); setFilterFund(""); }}>Azzera filtri</button>}
+            </div>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Data</th><th>Spesa</th><th>Fondo</th><th>Nota</th><th>Importo</th><th>Azioni</th></tr></thead>
+              <tbody>
+                {filteredPayments.map((p) => editingId === p.id ? (
+                  <tr key={p.id} className="editing-row">
+                    <td><input type="date" value={editDraft.date} onChange={(e) => setEditDraft((d) => ({ ...d, date: e.target.value }))} /></td>
+                    <td><select value={editDraft.allocationId} onChange={(e) => setEditDraft((d) => ({ ...d, allocationId: e.target.value }))}><option value={OTHER_PAYMENT_ID}>ALTRO</option>{data.allocations.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></td>
+                    <td><select value={editDraft.fundId} onChange={(e) => setEditDraft((d) => ({ ...d, fundId: e.target.value }))}>{result.funds.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}</select></td>
+                    <td><input value={editDraft.note} onChange={(e) => setEditDraft((d) => ({ ...d, note: e.target.value }))} placeholder="Nota" /></td>
+                    <td><input className="edit-money" type="number" min="0" step="0.01" value={editDraft.amount} onChange={(e) => setEditDraft((d) => ({ ...d, amount: e.target.value }))} /></td>
+                    <td className="row-actions"><button className="pay-btn mini-action" onClick={saveEdit}>Salva</button><button className="secondary-btn mini-action" onClick={cancelEdit}>Annulla</button></td>
+                  </tr>
+                ) : (
+                  <tr key={p.id}>
+                    <td>{formatDate(p.date)}</td>
+                    <td className="strong">{p.allocationName}</td>
+                    <td>{p.fundName}</td>
+                    <td>{p.note || "—"}</td>
+                    <td className="money strong">{euro(p.amount)}</td>
+                    <td className="row-actions">
+                      <button className="icon-btn" onClick={() => startEdit(p)} title="Modifica pagamento"><Pencil size={16} /></button>
+                      <button className="icon-btn warning-icon" onClick={() => undoPayment(p.id)} title="Annulla pagamento"><Undo2 size={16} /></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {filteredPayments.length === 0 && <div className="empty small-empty"><Info size={18} /><span>Nessun pagamento corrisponde ai filtri selezionati.</span></div>}
+        </>
       )}
     </section>
   );
 }
 
 function MonthlyOverview({ result }) {
+  const coherenceDiff = result.totalInitial - (result.totalCurrent + result.totalPaid);
+  const coherent = Math.abs(coherenceDiff) <= 0.005;
   return (
     <section className="summary-card">
       <h2><Coins size={20} /> Situazione del mese</h2>
@@ -450,6 +547,10 @@ function MonthlyOverview({ result }) {
       <div className="summary-line"><span>Pagamenti già effettuati</span><strong>{euro(result.totalPaid)}</strong></div>
       <div className="summary-line"><span>Spese previste ancora da pagare</span><strong>{euro(result.totalReserved)}</strong></div>
       <div className="summary-line"><span>Saldo reale attuale</span><strong>{euro(result.totalCurrent)}</strong></div>
+      <div className={`coherence-box ${coherent ? "ok" : "error"}`}>
+        {coherent ? <ShieldCheck size={18} /> : <AlertTriangle size={18} />}
+        <span>{coherent ? "Controllo contabile: i saldi tornano." : `Attenzione: c'è una differenza contabile di ${euro(Math.abs(coherenceDiff))}.`}</span>
+      </div>
       <div className={`status-box ${result.freeToAssign < -0.005 ? "bad" : "good"}`}>
         {result.freeToAssign < -0.005
           ? `Hai assegnato ${euro(Math.abs(result.freeToAssign))} in più rispetto ai soldi disponibili.`
@@ -474,7 +575,7 @@ function CarryPanel({ month, year, result, carryToNextMonth }) {
       <small>
         {hasPendingExpenses
           ? `Hai ancora ${euro(result.totalReserved)} di spese previste da pagare. Il trasferimento si attiva quando sono tutte coperte.`
-          : `A mese chiuso verranno trasferiti i saldi reali rimasti nei singoli fondi. Le vecchie spese non vengono copiate.`}
+          : `A mese chiuso verranno trasferiti i saldi reali rimasti nei singoli fondi. Le voci di spesa saranno riportate nel nuovo mese con importo 0 €.`}
       </small>
     </section>
   );

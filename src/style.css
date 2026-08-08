@@ -276,3 +276,20 @@ tfoot td { font-weight: 800; background: #f7fafc; }
   .funds-side, .funds-side-left { grid-template-columns: 1fr; }
   .funds-side .metric { min-height: 88px; flex-direction: row; align-items: center; justify-content: flex-start; }
 }
+
+/* --- Completamento funzionale storico pagamenti --- */
+.history-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:18px 0 10px;flex-wrap:wrap}
+.history-toolbar>strong{font-size:.95rem}
+.history-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.history-filters select{min-width:170px}
+.compact-btn{padding:9px 12px}
+.row-actions{white-space:nowrap;display:flex;gap:6px;align-items:center}
+.warning-icon{color:#b45309}
+.editing-row input,.editing-row select{min-width:110px;width:100%;padding:8px 9px;border:1px solid var(--border,#d8dee8);border-radius:8px;background:#fff}
+.editing-row .edit-money{min-width:95px}
+.mini-action{padding:7px 10px;font-size:.8rem;min-width:auto}
+.coherence-box{display:flex;align-items:center;gap:9px;margin-top:14px;padding:10px 12px;border-radius:10px;font-size:.88rem;font-weight:600}
+.coherence-box.ok{background:#ecfdf3;color:#166534;border:1px solid #bbf7d0}
+.coherence-box.error{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}
+.small-empty{margin-top:8px;padding:10px 12px}
+@media (max-width: 900px){.history-filters{width:100%}.history-filters select{flex:1;min-width:145px}.editing-row td{min-width:130px}}
