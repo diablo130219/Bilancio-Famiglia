@@ -17,6 +17,7 @@ const MONTHS = [
 ];
 
 const TYPES = ["Spesa fissa", "Stanziamento", "Rata", "Altro"];
+const OTHER_PAYMENT_ID = "__altro__";
 
 const makeId = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
@@ -385,12 +386,13 @@ function PaymentsPanel({ data, result, updateMonth }) {
   const [note, setNote] = useState("");
   const [fundId, setFundId] = useState("");
 
+  const isOther = allocationId === OTHER_PAYMENT_ID;
   const selected = data.allocations.find((a) => a.id === allocationId);
   const selectedFund = data.funds.find((f) => f.id === fundId);
   const selectedFundResult = result.funds.find((f) => f.id === fundId);
 
   const addPayment = () => {
-    if (!selected) return alert("Scegli prima la spesa da pagare.");
+    if (!selected && !isOther) return alert("Scegli prima la spesa da pagare.");
     if (!selectedFund) return alert("Scegli da quale fondo scalare questo pagamento.");
     const val = Number(amount) || 0;
     if (val <= 0) return;
@@ -408,9 +410,9 @@ function PaymentsPanel({ data, result, updateMonth }) {
       <PanelHead icon={ReceiptText} title="3. Registra una spesa o una rata" subtitle="Quando paghi scegli da quale fondo scalare l’importo" />
       <div className="payment-form">
         <label><span>Data</span><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
-        <label><span>Voce</span><select value={allocationId} onChange={(e) => setAllocationId(e.target.value)}><option value="">Scegli spesa</option>{data.allocations.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
+        <label><span>Voce</span><select value={allocationId} onChange={(e) => setAllocationId(e.target.value)}><option value="">Scegli spesa</option><option value={OTHER_PAYMENT_ID}>ALTRO</option>{data.allocations.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
         <label><span>Importo</span><input type="number" step="0.01" min="0" placeholder="0,00 €" value={amount} onChange={(e) => setAmount(e.target.value)} /></label>
-        <label><span>Nota</span><input placeholder="Facoltativa" value={note} onChange={(e) => setNote(e.target.value)} /></label>
+        <label><span>Nota</span><input placeholder={isOther ? "Es. Farmacia, regalo, parcheggio…" : "Facoltativa"} value={note} onChange={(e) => setNote(e.target.value)} /></label>
         <label><span>Scala da</span><select value={fundId} onChange={(e) => setFundId(e.target.value)}><option value="">Scegli fondo</option>{result.funds.map((f) => <option key={f.id} value={f.id}>{f.name} · {euro(f.current)} disponibili</option>)}</select></label>
         <button className="pay-btn" onClick={addPayment}><CheckCircle2 size={18} /> Registra pagamento</button>
       </div>
@@ -533,7 +535,7 @@ function calculateMonth(data) {
     .map((p) => {
       const allocation = data.allocations.find((a) => a.id === p.allocationId);
       const fund = data.funds.find((f) => f.id === (p.fundId || allocation?.fundId));
-      return { ...p, allocationName: allocation?.name || "Voce eliminata", fundName: fund?.name || "—" };
+      return { ...p, allocationName: p.allocationId === OTHER_PAYMENT_ID ? "ALTRO" : (allocation?.name || "Voce eliminata"), fundName: fund?.name || "—" };
     })
     .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
