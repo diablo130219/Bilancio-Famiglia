@@ -1,1466 +1,514 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { createClient } from "@supabase/supabase-js";
 import {
-  PiggyBank, Wallet, ShoppingCart, ReceiptText, NotebookPen, Target,
-  CheckCircle2, Trash2, Plus, Heart, Coffee, Landmark, Briefcase,
-  Users, Baby, Home, HandCoins, Star, Fuel, Gift, Info, AlertTriangle,
-  RotateCcw, Download, BarChart3, ShieldCheck, DatabaseZap, PieChart, CalendarCheck, TrendingUp, Sparkles, Trophy, Banknote, TrendingDown, CircleDollarSign, Zap
+  Wallet, Plus, Trash2, Landmark, ReceiptText, PiggyBank,
+  ArrowRight, CheckCircle2, CalendarDays, RotateCcw, Download,
+  Coins, CircleDollarSign, Banknote, Layers3, Info
 } from "lucide-react";
 import "./style.css";
 
-const STORAGE_KEY = "bilancio-famiglia-react-v2";
-const MONTH_KEY = "bilancio-famiglia-month-v2";
-const YEAR_KEY = "bilancio-famiglia-year-v2";
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
-const CLOUD_ROW_MONTH = "APP_STATE";
-const CLOUD_ROW_YEAR = 2026;
-
+const STORAGE_KEY = "bilancio-famiglia-zero-based-v1";
+const MONTH_KEY = "bilancio-famiglia-zero-based-month";
+const YEAR_KEY = "bilancio-famiglia-zero-based-year";
 
 const MONTHS = [
   "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
   "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"
 ];
 
-const FUNDS = [
-  { key: "Residuo banca", icon: Landmark },
-  { key: "Stipendio", icon: Briefcase },
-  { key: "Mantenimento", icon: Users },
-  { key: "Assegno unico", icon: Baby },
-  { key: "Giulia", icon: Heart },
-  { key: "Casa", icon: Home },
-  { key: "Tasca", icon: HandCoins },
-  { key: "Extra", icon: Star }
-];
+const TYPES = ["Spesa fissa", "Stanziamento", "Rata", "Altro"];
 
-const CATEGORIES = [
-  { key: "Alimenti + prodotti casa", icon: ShoppingCart },
-  { key: "Benzina", icon: Fuel },
-  { key: "Paghetta Angelo", icon: Baby },
-  { key: "Sfizi", icon: Gift },
-  { key: "Deposito", icon: Wallet },
-  { key: "Altro variabile", icon: Star }
-];
-
-const FIXED_ITEMS = [
-  "Spese alimentari", "Benzina", "Angelo", "Sfizi",
-  "Findomestic", "Nintendo + Scopa elettrica", "Netflix", "Tim Vision",
-  "Wind Fisso", "Mutuo", "Garage", "PS Store", "Wind Mobile",
-  "Enel", "Gas", "Gori", "Altro finanziamento", "Altro abbonamento"
-];
-
-const VARIABLE_ALLOCATIONS = {
-  "Spese alimentari": { category: "Alimenti + prodotti casa", defaultAmount: 600 },
-  "Benzina": { category: "Benzina", defaultAmount: 80 },
-  "Angelo": { category: "Paghetta Angelo", defaultAmount: 80 },
-  "Sfizi": { category: "Sfizi", defaultAmount: 100 }
-};
+const makeId = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 const euro = (value) =>
-  (Number(value) || 0).toLocaleString("it-IT", { style: "currency", currency: "EUR" });
+  (Number(value) || 0).toLocaleString("it-IT", {
+    style: "currency",
+    currency: "EUR"
+  });
 
 const emptyMonth = () => ({
-  year: 2026,
-  funds: Object.fromEntries(FUNDS.map(({ key }) => [key, 0])),
-  budgets: Object.fromEntries(CATEGORIES.map(({ key }) => [key, 0])),
-  quick: Object.fromEntries(CATEGORIES.map(({ key }) => [key, { amount: 0, source: "" }])),
-  movements: [],
-  fixed: Object.fromEntries(FIXED_ITEMS.map((name) => [name, { amount: VARIABLE_ALLOCATIONS[name]?.defaultAmount || 0, source: "", paid: "No" }])),
-  goals: [
-    { id: makeId(), name: "Obiettivo risparmio", target: 0, current: 0 }
-  ],
-  contascatti: {
-    letturaIniziale: 0,
-    letturaAttuale: 0,
-    costoKwh: 0.30,
-    quotaFissa: 0,
-    obiettivoKwh: 250,
-    movimenti: []
-  }
+  funds: [],
+  allocations: [],
+  payments: []
 });
 
-const initialState = () => Object.fromEntries(MONTHS.map((m) => [m, emptyMonth()]));
+const makeYear = () => Object.fromEntries(MONTHS.map((m) => [m, emptyMonth()]));
 
-const makeId = () => {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
-  return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-};
+const emptyStore = () => ({ years: {} });
 
-const normalizeMonth = (monthData) => {
-  const base = emptyMonth();
+function normalizeMonth(raw) {
   return {
-    ...base,
-    ...monthData,
-    funds: { ...base.funds, ...(monthData?.funds || {}) },
-    budgets: { ...base.budgets, ...(monthData?.budgets || {}) },
-    quick: { ...base.quick, ...(monthData?.quick || {}) },
-    movements: (monthData?.movements || []).map((item) => ({
-      id: item.id || makeId(),
-      date: item.date || "",
-      category: item.category || CATEGORIES[0].key,
-      amount: Number(item.amount) || 0,
-      source: item.source || "",
-      note: item.note || ""
-    })),
-    fixed: { ...base.fixed, ...(monthData?.fixed || {}) },
-    goals: (monthData?.goals || base.goals).map((goal) => ({
-      id: goal.id || makeId(),
-      name: goal.name || "Obiettivo risparmio",
-      target: Number(goal.target) || 0,
-      current: Number(goal.current) || 0
-    })),
-    contascatti: {
-      ...base.contascatti,
-      ...(monthData?.contascatti || {}),
-      letturaIniziale: Number(monthData?.contascatti?.letturaIniziale) || 0,
-      letturaAttuale: Number(monthData?.contascatti?.letturaAttuale) || 0,
-      costoKwh: Number(monthData?.contascatti?.costoKwh) || 0.30,
-      quotaFissa: Number(monthData?.contascatti?.quotaFissa) || 0,
-      obiettivoKwh: Number(monthData?.contascatti?.obiettivoKwh) || 250,
-      movimenti: (monthData?.contascatti?.movimenti || []).map((item) => ({
-        id: item.id || makeId(),
-        date: item.date || "",
-        lettura: Number(item.lettura) || 0,
-        note: item.note || ""
-      }))
-    }
+    funds: Array.isArray(raw?.funds)
+      ? raw.funds.map((f) => ({
+          id: f.id || makeId(),
+          name: f.name || "Fondo",
+          amount: Number(f.amount) || 0
+        }))
+      : [],
+    allocations: Array.isArray(raw?.allocations)
+      ? raw.allocations.map((a) => ({
+          id: a.id || makeId(),
+          name: a.name || "Spesa",
+          type: TYPES.includes(a.type) ? a.type : "Spesa fissa",
+          planned: Number(a.planned) || 0,
+          fundId: a.fundId || ""
+        }))
+      : [],
+    payments: Array.isArray(raw?.payments)
+      ? raw.payments.map((p) => ({
+          id: p.id || makeId(),
+          date: p.date || "",
+          allocationId: p.allocationId || "",
+          amount: Number(p.amount) || 0,
+          note: p.note || ""
+        }))
+      : []
   };
-};
+}
 
-const normalizeState = (saved) => {
-  const base = initialState();
-  MONTHS.forEach((m) => {
-    base[m] = normalizeMonth(saved?.[m]);
-  });
-  return base;
-};
-
-const normalizeYearStore = (saved) => {
-  const store = {};
-
-  if (saved?.years && typeof saved.years === "object") {
-    Object.entries(saved.years).forEach(([year, months]) => {
-      store[String(year)] = normalizeState(months);
-    });
-  } else {
-    // Migrazione automatica dalle versioni vecchie: i dati esistenti vengono messi nel 2026.
-    store["2026"] = normalizeState(saved);
-  }
-
-  return { years: store };
-};
-
-const getYearMonths = (yearStore, year) => {
-  const key = String(year || 2026);
-  return yearStore?.years?.[key] || initialState();
-};
-
-const loadState = () => {
+function loadStore() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return normalizeYearStore(saved);
+    if (!saved?.years) return emptyStore();
+    const result = { years: {} };
+    Object.entries(saved.years).forEach(([year, months]) => {
+      result.years[year] = makeYear();
+      MONTHS.forEach((m) => {
+        result.years[year][m] = normalizeMonth(months?.[m]);
+      });
+    });
+    return result;
   } catch {
-    return { years: { "2026": initialState() } };
+    return emptyStore();
   }
-};
+}
 
 function App() {
-  const [saveStatus, setSaveStatus] = useState("Pronto");
-  const [state, setState] = useState(loadState);
-  const [month, setMonth] = useState(localStorage.getItem(MONTH_KEY) || "Giugno");
-  const [selectedYear, setSelectedYear] = useState(Number(localStorage.getItem(YEAR_KEY)) || 2026);
-  const [cloudStatus, setCloudStatus] = useState(supabase ? "Connessione cloud..." : "Solo locale");
-  const [page, setPage] = useState("bilancio");
-  const cloudReadyRef = useRef(false);
-  const currentYearState = getYearMonths(state, selectedYear);
-  const data = { ...normalizeMonth(currentYearState[month]), year: selectedYear };
+  const now = new Date();
+  const [store, setStore] = useState(loadStore);
+  const [month, setMonth] = useState(localStorage.getItem(MONTH_KEY) || MONTHS[now.getMonth()]);
+  const [year, setYear] = useState(Number(localStorage.getItem(YEAR_KEY)) || now.getFullYear());
 
-  const saveLocal = (next, selectedMonth = month, selected = selectedYear) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    localStorage.setItem(MONTH_KEY, selectedMonth);
-    localStorage.setItem(YEAR_KEY, String(selected));
-  };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadCloud = async () => {
-      if (!supabase) {
-        cloudReadyRef.current = true;
-        return;
-      }
-
-      try {
-        const { data: row, error } = await supabase
-          .from("bilanci")
-          .select("dati")
-          .eq("mese", CLOUD_ROW_MONTH)
-          .eq("anno", CLOUD_ROW_YEAR)
-          .limit(1)
-          .maybeSingle();
-
-        if (error) throw error;
-
-        if (!cancelled && row?.dati) {
-          const cloudState = normalizeYearStore(row.dati);
-          setState(cloudState);
-          saveLocal(cloudState);
-        }
-
-        if (!cancelled) {
-          cloudReadyRef.current = true;
-          setCloudStatus("Cloud attivo");
-        }
-      } catch (error) {
-        console.error("Errore caricamento Supabase:", error);
-        if (!cancelled) {
-          cloudReadyRef.current = true;
-          setCloudStatus("Errore cloud");
-        }
-      }
-    };
-
-    loadCloud();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    saveLocal(state, month);
-
-    if (!supabase || !cloudReadyRef.current) return;
-
-    const timeout = setTimeout(() => {
-      saveStateToCloud(state, setCloudStatus);
-    }, 650);
-
-    return () => clearTimeout(timeout);
-  }, [state, month]);
+  const data = getMonth(store, year, month);
+  const result = useMemo(() => calculateMonth(data), [data]);
 
   const updateMonth = (updater) => {
-    setState((previous) => {
-      const next = structuredClone(previous);
-      const yearKey = String(selectedYear);
-      if (!next.years) next.years = {};
-      if (!next.years[yearKey]) next.years[yearKey] = initialState();
-      next.years[yearKey][month] = normalizeMonth(next.years[yearKey][month]);
-      updater(next.years[yearKey][month]);
-      next.years[yearKey][month].year = selectedYear;
-      saveLocal(next);
+    setStore((prev) => {
+      const next = structuredClone(prev);
+      const y = String(year);
+      if (!next.years[y]) next.years[y] = makeYear();
+      next.years[y][month] = normalizeMonth(next.years[y][month]);
+      updater(next.years[y][month]);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      localStorage.setItem(MONTH_KEY, month);
+      localStorage.setItem(YEAR_KEY, String(year));
       return next;
     });
   };
 
-  const switchMonth = (value) => {
-    setMonth(value);
-    localStorage.setItem(MONTH_KEY, value);
-    localStorage.setItem(YEAR_KEY, String(selectedYear));
-  };
-
-  const changeYear = (year) => {
-    const cleanYear = Number(year) || 2026;
-    setSelectedYear(cleanYear);
-    localStorage.setItem(YEAR_KEY, String(cleanYear));
-    setState((previous) => {
-      const next = structuredClone(previous);
-      const yearKey = String(cleanYear);
-      if (!next.years) next.years = {};
-      if (!next.years[yearKey]) next.years[yearKey] = initialState();
-      saveLocal(next, month, cleanYear);
-      return next;
+  const resetMonth = () => {
+    if (!confirm(`Azzerare completamente ${month} ${year}?`)) return;
+    updateMonth((m) => {
+      m.funds = [];
+      m.allocations = [];
+      m.payments = [];
     });
   };
 
-  const resetCurrentMonth = () => {
-    if (!confirm(`Vuoi azzerare tutti i dati di ${month} ${selectedYear}?`)) return;
-    setState((previous) => {
-      const next = structuredClone(previous);
-      const yearKey = String(selectedYear);
-      if (!next.years) next.years = {};
-      if (!next.years[yearKey]) next.years[yearKey] = initialState();
-      next.years[yearKey][month] = emptyMonth();
-      next.years[yearKey][month].year = selectedYear;
-      saveLocal(next);
+  const carryToNextMonth = () => {
+    const currentIndex = MONTHS.indexOf(month);
+    const nextMonth = MONTHS[(currentIndex + 1) % 12];
+    const nextYear = currentIndex === 11 ? year + 1 : year;
+    const balances = result.funds.filter((f) => f.current > 0.005);
+    if (!balances.length) {
+      alert("Non ci sono residui positivi da portare al mese successivo.");
+      return;
+    }
+    if (!confirm(`Portare i residui reali di ${month} in ${nextMonth} ${nextYear}? Le spese non verranno copiate.`)) return;
+
+    setStore((prev) => {
+      const next = structuredClone(prev);
+      const y = String(nextYear);
+      if (!next.years[y]) next.years[y] = makeYear();
+      const target = normalizeMonth(next.years[y][nextMonth]);
+      balances.forEach((f) => {
+        const existing = target.funds.find((x) => x.name.trim().toLowerCase() === f.name.trim().toLowerCase());
+        if (existing) existing.amount += f.current;
+        else target.funds.push({ id: makeId(), name: f.name, amount: f.current });
+      });
+      next.years[y][nextMonth] = target;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       return next;
     });
+    alert(`Residui portati in ${nextMonth} ${nextYear}.`);
   };
-
-  const result = useMemo(() => calculateMonth(data), [data]);
 
   return (
     <div className="app-shell">
-      <Header
-        month={month}
-        setMonth={switchMonth}
-        year={selectedYear}
-        updateYear={changeYear}
-        resetCurrentMonth={resetCurrentMonth}
-        cloudStatus={cloudStatus}
-        page={page}
-        setPage={setPage}
-      />
+      <Header month={month} setMonth={setMonth} year={year} setYear={setYear} resetMonth={resetMonth} />
 
-      {page === "bilancio" ? (
-        <>
-          <CloudToolsPanel state={currentYearState} result={result} cloudStatus={cloudStatus} data={data} />
-          <ManagerDashboard result={result} data={data} month={month} />
+      <section className="hero-summary">
+        <Metric icon={Banknote} label="Disponibilità totale" value={euro(result.totalInitial)} tone="green" />
+        <Metric icon={Layers3} label="Già assegnato" value={euro(result.totalPlanned)} tone="blue" />
+        <Metric icon={CircleDollarSign} label="Libero da assegnare" value={euro(result.freeToAssign)} tone={result.freeToAssign < 0 ? "red" : "purple"} />
+        <Metric icon={ReceiptText} label="Già pagato" value={euro(result.totalPaid)} tone="orange" />
+      </section>
 
-          <main className="dashboard-grid">
-            <FundsCard data={data} result={result} updateMonth={updateMonth} />
-            <DailySpendingPanel data={data} result={result} />
-            <SummaryPanel result={result} />
+      <section className="explain-strip">
+        <Info size={20} />
+        <span>
+          I soldi <strong>assegnati</strong> sono già riservati alle spese del mese. Il saldo reale dei fondi cala solo quando registri un pagamento.
+        </span>
+      </section>
 
-            <FixedCard data={data} result={result} updateMonth={updateMonth} />
-            <GuideCard />
-            <MovementsCard data={data} updateMonth={updateMonth} />
-            <InsightsPanel data={data} result={result} />
-            <GoalsPanel data={data} updateMonth={updateMonth} />
-            <CalendarPanel data={data} />
-            <FinancialCoachPanel result={result} />
-            <AnnualMiniPanel state={currentYearState} />
-          </main>
-        </>
-      ) : (
-        <ContascattiPage data={data} month={month} updateMonth={updateMonth} />
-      )}
+      <div className="main-grid">
+        <FundsPanel data={data} result={result} updateMonth={updateMonth} />
+        <AllocationsPanel data={data} result={result} updateMonth={updateMonth} />
+      </div>
+
+      <PaymentsPanel data={data} result={result} updateMonth={updateMonth} />
+
+      <section className="bottom-grid">
+        <MonthlyOverview result={result} />
+        <CarryPanel month={month} year={year} result={result} carryToNextMonth={carryToNextMonth} />
+      </section>
+
+      <footer className="footer-tools">
+        <button className="secondary-btn" onClick={() => downloadBackup(store)}><Download size={17} /> Scarica backup JSON</button>
+        <span>I dati di questa versione partono da zero e vengono salvati nel browser.</span>
+      </footer>
     </div>
   );
 }
 
-function Header({ month, setMonth, year, updateYear, resetCurrentMonth, cloudStatus, page, setPage }) {
+function Header({ month, setMonth, year, setYear, resetMonth }) {
   return (
-    <header className="top-hero">
-      <section className="brand-block">
-        <div className="decor-leaf left">❧</div>
-        <h1>Bilancio Mensile <Heart size={34} strokeWidth={2.2} /></h1>
-        <p>Parti da zero ogni mese, inserisci entrate e uscite reali</p>
-      </section>
-
-      <section className="period-controls">
-        <div className="period-pill">
-          <span>SEZIONE</span>
-          <select value={page} onChange={(event) => setPage(event.target.value)}>
-            <option value="bilancio">Bilancio</option>
-            <option value="contascatti">Contascatti Enel</option>
-          </select>
+    <header className="topbar">
+      <div className="brand">
+        <div className="brand-icon"><PiggyBank size={32} /></div>
+        <div>
+          <h1>Bilancio Famiglia</h1>
+          <p>Assegna ogni euro prima di spenderlo</p>
         </div>
-        <div className="period-pill">
-          <span>MESE</span>
-          <select value={month} onChange={(event) => setMonth(event.target.value)}>
-            {MONTHS.map((item) => <option key={item}>{item}</option>)}
-          </select>
-        </div>
-        <div className="period-pill">
-          <span>ANNO</span>
-          <input type="number" min="2024" max="2035" value={year} onChange={(event) => updateYear(Number(event.target.value) || 2026)} />
-        </div>
-      </section>
-
-      <section className="coffee-card"><Coffee size={56} /></section>
-
-      <section className="sticky-note">
-        Piccoli passi<br />ogni giorno<br />portano a grandi<br />risultati ♡
-      </section>
-
-      <div className={`cloud-status-pill ${String(cloudStatus).toLowerCase().includes("errore") ? "cloud-error" : ""}`}>
-        {cloudStatus || "Cloud"}
       </div>
-
-      <button className="reset-month" onClick={resetCurrentMonth}>
-        <RotateCcw size={17} /> Azzera mese
-      </button>
+      <div className="period-controls">
+        <label>
+          <span>Mese</span>
+          <select value={month} onChange={(e) => { setMonth(e.target.value); localStorage.setItem(MONTH_KEY, e.target.value); }}>
+            {MONTHS.map((m) => <option key={m}>{m}</option>)}
+          </select>
+        </label>
+        <label>
+          <span>Anno</span>
+          <input type="number" value={year} min="2020" max="2100" onChange={(e) => { const v = Number(e.target.value) || new Date().getFullYear(); setYear(v); localStorage.setItem(YEAR_KEY, String(v)); }} />
+        </label>
+        <button className="danger-btn" onClick={resetMonth}><RotateCcw size={17} /> Azzera mese</button>
+      </div>
     </header>
   );
 }
 
-
-
-
-function CloudToolsPanel({ state, result, cloudStatus, data }) {
-  const annual = calculateAnnualStats(state);
-  const monthlyOut = (result.totalBudgetSpent || 0) + (result.fixedPaid || 0);
-  const plannedOut = (result.totalVariable || 0) + (result.fixedTotal || 0);
-  const savingRate = result.totalInitial > 0 ? Math.round((result.freeMoney / result.totalInitial) * 100) : 0;
-  const active = annual.rows.filter((row) => row.initial !== 0 || row.spent !== 0 || row.free !== 0);
-
+function Metric({ icon: Icon, label, value, tone }) {
   return (
-    <section className="control-center">
-      <div className={`control-main ${result.freeMoney < 0 ? "money-negative" : result.freeMoney < 200 ? "money-low" : result.freeMoney < 500 ? "money-mid" : "money-good"}`}>
-        <div className="control-title">
-          <CircleDollarSign size={24} />
-          <div>
-            <span>LIBERTÀ DEL MESE</span>
-            <strong>{euro(result.freeMoney)}</strong>
-            <small>Quello che resterà a fine mese</small>
-          </div>
-        </div>
-
-        <div className="control-grid">
-          <div>
-            <span>Entrate mese</span>
-            <strong>{euro(result.totalInitial)}</strong>
-          </div>
-          <div>
-            <span>Uscite già fatte</span>
-            <strong>{euro(monthlyOut)}</strong>
-          </div>
-          <div>
-            <span>Uscite previste totali</span>
-            <strong>{euro(plannedOut)}</strong>
-          </div>
-          <div>
-            <span>Tasso libertà</span>
-            <strong className={savingRate < 0 ? "danger" : savingRate < 20 ? "attention" : ""}>{savingRate}%</strong>
-          </div>
-        </div>
-      </div>
-
-      <div className="control-side">
-        <div className="control-mini">
-          <DatabaseZap size={21} />
-          <div>
-            <span>Cloud</span>
-            <strong>{cloudStatus || "Sincronizzato"}</strong>
-            <small>{countSavedItems(state)} voci salvate · PC casa, lavoro e telefono</small>
-          </div>
-        </div>
-
-        <div className="control-mini">
-          <Trophy size={21} />
-          <div>
-            <span>Mese migliore</span>
-            <strong>{annual.bestActive ? `${annual.bestActive.month} ${data.year}` : "-"}</strong>
-            <small>{euro(annual.bestActive?.free || 0)}</small>
-          </div>
-        </div>
-
-        <button className="backup-button compact-backup" onClick={() => downloadJsonBackup(state)} title="Scarica backup JSON">
-          <Download size={16} />
-          Backup
-        </button>
-      </div>
-    </section>
+    <article className={`metric ${tone}`}>
+      <div className="metric-icon"><Icon size={22} /></div>
+      <div><span>{label}</span><strong>{value}</strong></div>
+    </article>
   );
 }
 
+function FundsPanel({ data, result, updateMonth }) {
+  const [name, setName] = useState("");
+  const [amount, setAmount] = useState("");
 
+  const addFund = () => {
+    if (!name.trim()) return;
+    updateMonth((m) => m.funds.push({ id: makeId(), name: name.trim(), amount: Number(amount) || 0 }));
+    setName("");
+    setAmount("");
+  };
 
-function AnnualMiniPanel({ state }) {
-  const annual = calculateAnnualStats(state);
-  const activeRows = annual.rows.filter((row) => row.initial !== 0 || row.spent !== 0 || row.free !== 0);
-  const displayRows = activeRows.length ? activeRows : annual.rows.slice(0, 3);
-
-  return (
-    <section className="annual-mini-panel annual-upgraded">
-      <div className="section-heading">
-        <BarChart3 size={20} />
-        <div>
-          <h3>Riepilogo annuale</h3>
-          <p>Mostra solo i mesi davvero utilizzati e le statistiche importanti</p>
-        </div>
-      </div>
-
-      <div className="annual-kpis">
-        <div>
-          <span>Mesi attivi</span>
-          <strong>{activeRows.length}</strong>
-        </div>
-        <div>
-          <span>Totale entrate</span>
-          <strong>{euro(activeRows.reduce((s, r) => s + r.initial, 0))}</strong>
-        </div>
-        <div>
-          <span>Totale speso</span>
-          <strong>{euro(activeRows.reduce((s, r) => s + r.spent, 0))}</strong>
-        </div>
-        <div>
-          <span>Libertà totale</span>
-          <strong className={annual.totalFree < 0 ? "danger" : ""}>{euro(annual.totalFree)}</strong>
-        </div>
-      </div>
-
-      <div className="annual-table compact">
-        {displayRows.map((row) => (
-          <div className={`annual-row ${row.free < 0 ? "negative-row" : ""}`} key={row.month}>
-            <b>{row.month}</b>
-            <span>Entrate {euro(row.initial)}</span>
-            <span>Uscite {euro(row.spent)}</span>
-            <strong className={row.free < 0 ? "danger" : ""}>{euro(row.free)}</strong>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-
-
-function ManagerDashboard({ result, data, month }) {
-  const paidRatePercent = result.fixedTotal > 0 ? Math.round((result.fixedPaid / result.fixedTotal) * 100) : 0;
-  const daysLeft = getDaysLeftInMonth(data.year, month);
-  const status = result.freeMoney < 0 ? "Rischio" : result.freeMoney < 300 ? "Attenzione" : "Ok";
+  const removeFund = (id) => {
+    const used = data.allocations.some((a) => a.fundId === id);
+    if (used) return alert("Questo fondo è usato da uno o più stanziamenti. Cambia prima la loro provenienza.");
+    updateMonth((m) => { m.funds = m.funds.filter((f) => f.id !== id); });
+  };
 
   return (
-    <section className="manager-dashboard">
-      <ManagerCard icon={<Wallet />} label="FONDI DISPONIBILI ORA" value={euro(result.totalCurrent)} tone={result.totalCurrent < 0 ? "red" : result.totalCurrent < 300 ? "yellow" : "green"} />
-      <ManagerCard icon={<CalendarCheck />} label="Giorni a fine mese" value={daysLeft} suffix="giorni" tone="blue" />
-      <ManagerCard icon={<TrendingDown />} label="Spese variabili mese" value={euro(result.totalVariable)} tone={result.totalVariable > result.totalInitial * .5 && result.totalInitial > 0 ? "yellow" : "green"} />
-      <ManagerCard icon={<ReceiptText />} label="Impegni residui" value={euro(result.fixedToPay)} tone={result.fixedToPay > 0 ? "orange" : "green"} />
-      <ManagerCard icon={<Sparkles />} label="Rate pagate" value={`${paidRatePercent}%`} tone="purple" />
-      <ManagerCard icon={<CheckCircle2 />} label="Stato mese" value={status} tone={status === "Rischio" ? "red" : status === "Attenzione" ? "yellow" : "green"} />
-    </section>
-  );
-}
-
-function ManagerCard({ icon, label, value, suffix, tone }) {
-  return (
-    <div className={`manager-card ${tone}`}>
-      <div className="manager-icon">{icon}</div>
-      <div>
-        <span>{label}</span>
-        <strong>{value}</strong>
-        {suffix && <small>{suffix}</small>}
-      </div>
-    </div>
-  );
-}
-
-function InsightsPanel({ data, result }) {
-  const categories = CATEGORIES.map(({ key }) => ({
-    key,
-    spent: result.budgets[key]?.spent || 0
-  })).filter((item) => item.spent > 0);
-
-  const maxSpent = Math.max(1, ...categories.map((item) => item.spent));
-  const top = [...categories].sort((a, b) => b.spent - a.spent)[0];
-
-  return (
-    <section className="insights-panel">
-      <div className="section-heading">
-        <PieChart size={20} />
-        <div>
-          <h3>Analisi consumi</h3>
-          <p>Quanto hai speso realmente per categoria</p>
-        </div>
+    <section className="panel">
+      <PanelHead icon={Wallet} title="1. Fondi disponibili" subtitle="Inserisci da dove arrivano i soldi del mese" />
+      <div className="entry-row fund-entry">
+        <input placeholder="Es. Giulia, Extra, Residuo banca" value={name} onChange={(e) => setName(e.target.value)} />
+        <input type="number" step="0.01" min="0" placeholder="Importo €" value={amount} onChange={(e) => setAmount(e.target.value)} />
+        <button className="primary-btn" onClick={addFund}><Plus size={17} /> Aggiungi</button>
       </div>
 
-      <div className="category-bars">
-        {categories.length === 0 && <div className="empty-state">Nessuna spesa inserita.</div>}
-        {categories.map((item) => (
-          <div className="category-bar-row" key={item.key}>
-            <div className="category-bar-title">
-              <span>{item.key}</span>
-              <strong>{euro(item.spent)}</strong>
-            </div>
-            <div className="wide-progress">
-              <div style={{ width: `${Math.min(100, (item.spent / maxSpent) * 100)}%` }} />
-            </div>
-            <small>{result.totalVariable > 0 ? `${Math.round((item.spent / result.totalVariable) * 100)}% delle spese variabili` : "0%"}</small>
-          </div>
-        ))}
-      </div>
-
-      {top && (
-        <div className="smart-tip">
-          <Trophy size={18} />
-          <span>Categoria più alta: <b>{top.key}</b> con {euro(top.spent)}.</span>
+      {data.funds.length === 0 ? <Empty text="Nessun fondo inserito. Tutto parte da 0." /> : (
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Fondo</th><th>Inizio mese</th><th>Riservato</th><th>Pagato</th><th>Saldo reale</th><th>Libero</th><th></th></tr></thead>
+            <tbody>
+              {result.funds.map((f) => (
+                <tr key={f.id}>
+                  <td><input className="table-input name-input" value={f.name} onChange={(e) => updateMonth((m) => { const x = m.funds.find((z) => z.id === f.id); if (x) x.name = e.target.value; })} /></td>
+                  <td><MoneyInput value={f.amount} onChange={(v) => updateMonth((m) => { const x = m.funds.find((z) => z.id === f.id); if (x) x.amount = v; })} /></td>
+                  <td className="money muted-money">{euro(f.reserved)}</td>
+                  <td className="money">{euro(f.paid)}</td>
+                  <td className="money strong">{euro(f.current)}</td>
+                  <td className={`money strong ${f.free < -0.005 ? "negative" : "positive"}`}>{euro(f.free)}</td>
+                  <td><button className="icon-btn" onClick={() => removeFund(f.id)} title="Elimina"><Trash2 size={16} /></button></td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot><tr><td>Totale</td><td>{euro(result.totalInitial)}</td><td>{euro(result.totalReserved)}</td><td>{euro(result.totalPaid)}</td><td>{euro(result.totalCurrent)}</td><td>{euro(result.freeToAssign)}</td><td></td></tr></tfoot>
+          </table>
         </div>
       )}
     </section>
   );
 }
 
-function GoalsPanel({ data, updateMonth }) {
-  const addGoal = () => updateMonth((d) => {
-    d.goals.push({ id: makeId(), name: "Nuovo obiettivo", target: 0, current: 0 });
-  });
+function AllocationsPanel({ data, result, updateMonth }) {
+  const [name, setName] = useState("");
+  const [type, setType] = useState("Spesa fissa");
+  const [planned, setPlanned] = useState("");
+  const [fundId, setFundId] = useState("");
 
-  return (
-    <section className="goals-panel">
-      <div className="section-heading">
-        <Target size={20} />
-        <div>
-          <h3>Obiettivi risparmio</h3>
-          <p>Facoltativo: puoi lasciarli a zero</p>
-        </div>
-      </div>
-
-      <div className="goals-list">
-        {data.goals.map((goal) => {
-          const percentage = goal.target > 0 ? Math.min(100, Math.round((goal.current / goal.target) * 100)) : 0;
-          return (
-            <div className="goal-card" key={goal.id}>
-              <div className="goal-fields">
-                <TextField value={goal.name} onChange={(value) => updateMonth((d) => findGoal(d, goal.id).name = value)} />
-                <NumberField value={goal.current} onChange={(value) => updateMonth((d) => findGoal(d, goal.id).current = value)} />
-                <NumberField value={goal.target} onChange={(value) => updateMonth((d) => findGoal(d, goal.id).target = value)} />
-                <button className="icon-button" onClick={() => updateMonth((d) => d.goals = d.goals.filter((g) => g.id !== goal.id))}>
-                  <Trash2 size={16} />
-                </button>
-              </div>
-              <div className="goal-meta">
-                <span>{euro(goal.current)} / {euro(goal.target)}</span>
-                <b>{percentage}%</b>
-              </div>
-              <div className="wide-progress goal-progress">
-                <div style={{ width: `${percentage}%` }} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <button className="add-button goal-add" onClick={addGoal}><Plus size={18} /> Aggiungi obiettivo</button>
-    </section>
-  );
-}
-
-function CalendarPanel({ data }) {
-  const events = [
-    ...data.movements.map((m) => ({ date: m.date, title: m.category, amount: m.amount, source: m.source, type: "spesa" })),
-    ...Object.entries(data.fixed)
-      .filter(([, item]) => isPaid(item.paid) && Number(item.amount) > 0)
-      .map(([name, item]) => ({ date: "Pagata", title: name, amount: item.amount, source: item.source, type: "fissa" }))
-  ];
-
-  return (
-    <section className="calendar-panel">
-      <div className="section-heading">
-        <CalendarCheck size={20} />
-        <div>
-          <h3>Calendario movimenti</h3>
-          <p>Vista rapida delle uscite inserite</p>
-        </div>
-      </div>
-
-      <div className="timeline">
-        {events.length === 0 && <div className="empty-state">Nessun movimento inserito.</div>}
-        {events.slice(0, 12).map((event, index) => (
-          <div className={`timeline-item ${event.type}`} key={`${event.title}-${index}`}>
-            <span>{event.date}</span>
-            <div>
-              <b>{event.title}</b>
-              <small>{event.source || "Fonte non scelta"}</small>
-            </div>
-            <strong>{euro(event.amount)}</strong>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-
-function FinancialCoachPanel({ result }) {
-  const fixedPct = result.fixedTotal > 0 ? Math.round((result.fixedPaid / result.fixedTotal) * 100) : 0;
-  const variablePct = result.totalInitial > 0 ? Math.round((result.totalVariable / result.totalInitial) * 100) : 0;
-  const message =
-    result.freeMoney < 0
-      ? "Attenzione: le rate ancora da pagare superano la disponibilità attuale. Valuta con attenzione le prossime spese non essenziali."
-      : result.freeMoney < 150
-        ? "Margine basso: controlla le spese giornaliere e le rate ancora da pagare."
-        : "Situazione stabile: continua a registrare le spese giorno per giorno per avere un quadro reale del mese.";
-
-  return (
-    <section className="financial-coach-panel">
-      <div className="section-heading">
-        <Sparkles size={20} />
-        <div><h3>Analisi finanziaria</h3><p>Lettura rapida della situazione del mese</p></div>
-      </div>
-      <div className="coach-body">
-        <div className="coach-message"><b>Consiglio del mese</b><p>{message}</p></div>
-        <div className="coach-metrics">
-          <div><span>Spese variabili / entrate</span><strong>{variablePct}%</strong></div>
-          <div><span>Rate pagate</span><strong>{fixedPct}%</strong><ProgressBar spent={result.fixedPaid} budget={result.fixedTotal} /></div>
-          <div><span>Libertà del mese</span><strong className={result.forecast < 0 ? "danger" : ""}>{euro(result.forecast)}</strong></div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-
-
-function ContascattiPage({ data, month, updateMonth }) {
-  const meter = data.contascatti || emptyMonth().contascatti;
-  const stats = calculateContascatti(meter);
-  const stato = stats.residuoKwh < 0 ? "Sforato" : stats.percentuale >= 90 ? "Attenzione" : "Ok";
-
-  const updateMeter = (field, value) => {
-    updateMonth((d) => {
-      const m = ensureMeter(d);
-      m[field] = value;
-    });
+  const addAllocation = () => {
+    if (!name.trim()) return;
+    updateMonth((m) => m.allocations.push({ id: makeId(), name: name.trim(), type, planned: Number(planned) || 0, fundId }));
+    setName(""); setPlanned(""); setFundId("");
   };
 
-  const addReading = () => {
-    updateMonth((d) => {
-      const m = ensureMeter(d);
-      m.movimenti.push({
-        id: makeId(),
-        date: new Date().toLocaleDateString("it-IT"),
-        lettura: Number(m.letturaAttuale) || 0,
-        note: ""
-      });
+  const removeAllocation = (id) => {
+    const hasPayments = data.payments.some((p) => p.allocationId === id);
+    if (hasPayments && !confirm("Questa voce ha già dei pagamenti. Eliminandola eliminerai anche quei pagamenti. Continuare?")) return;
+    updateMonth((m) => {
+      m.allocations = m.allocations.filter((a) => a.id !== id);
+      m.payments = m.payments.filter((p) => p.allocationId !== id);
     });
   };
 
   return (
-    <>
-      <section className="control-center contascatti-control">
-        <div className={`control-main ${stato === "Sforato" ? "money-negative" : stato === "Attenzione" ? "money-low" : "money-good"}`}>
-          <div className="control-title">
-            <Zap size={24} />
-            <div>
-              <span>CONTASCATTI ENEL</span>
-              <strong>{stats.consumoKwh.toLocaleString("it-IT")} kWh</strong>
-              <small>Consumo del mese di {month}</small>
-            </div>
-          </div>
+    <section className="panel">
+      <PanelHead icon={Landmark} title="2. Spese da coprire" subtitle="Decidi prima quanto destinare e da quale fondo" />
+      <div className="allocation-form">
+        <input placeholder="Es. Mutuo, Alimentari, Benzina…" value={name} onChange={(e) => setName(e.target.value)} />
+        <select value={type} onChange={(e) => setType(e.target.value)}>{TYPES.map((t) => <option key={t}>{t}</option>)}</select>
+        <input type="number" step="0.01" min="0" placeholder="Stanziato €" value={planned} onChange={(e) => setPlanned(e.target.value)} />
+        <select value={fundId} onChange={(e) => setFundId(e.target.value)}>
+          <option value="">Da quale fondo?</option>
+          {data.funds.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+        </select>
+        <button className="primary-btn" onClick={addAllocation}><Plus size={17} /> Aggiungi</button>
+      </div>
 
-          <div className="control-grid">
-            <div>
-              <span>Lettura iniziale</span>
-              <strong>{meter.letturaIniziale || 0}</strong>
-            </div>
-            <div>
-              <span>Lettura attuale</span>
-              <strong>{stats.current || 0}</strong>
-            </div>
-            <div>
-              <span>Costo stimato</span>
-              <strong>{euro(stats.costoStimato)}</strong>
-            </div>
-            <div>
-              <span>Stato consumi</span>
-              <strong className={stato === "Sforato" ? "danger" : stato === "Attenzione" ? "attention" : ""}>{stato}</strong>
-            </div>
-          </div>
+      {data.allocations.length === 0 ? <Empty text="Nessuna spesa prevista. Inseriscile tu mese per mese." /> : (
+        <div className="allocation-list">
+          {result.allocations.map((a) => (
+            <article className="allocation-card" key={a.id}>
+              <div className="allocation-top">
+                <div className="allocation-name">
+                  <input className="bare-input" value={a.name} onChange={(e) => updateMonth((m) => { const x = m.allocations.find((z) => z.id === a.id); if (x) x.name = e.target.value; })} />
+                  <select className="mini-select" value={a.type} onChange={(e) => updateMonth((m) => { const x = m.allocations.find((z) => z.id === a.id); if (x) x.type = e.target.value; })}>{TYPES.map((t) => <option key={t}>{t}</option>)}</select>
+                </div>
+                <button className="icon-btn" onClick={() => removeAllocation(a.id)}><Trash2 size={16} /></button>
+              </div>
+              <div className="allocation-fields">
+                <label><span>Stanziato</span><MoneyInput value={a.planned} onChange={(v) => updateMonth((m) => { const x = m.allocations.find((z) => z.id === a.id); if (x) x.planned = v; })} /></label>
+                <label><span>Prelevato da</span><select value={a.fundId} onChange={(e) => updateMonth((m) => { const x = m.allocations.find((z) => z.id === a.id); if (x) x.fundId = e.target.value; })}><option value="">Non assegnato</option>{data.funds.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}</select></label>
+                <div className="allocation-stat"><span>Pagato</span><strong>{euro(a.paid)}</strong></div>
+                <div className="allocation-stat"><span>Da pagare</span><strong>{euro(a.remaining)}</strong></div>
+              </div>
+              <div className="progress"><span style={{ width: `${Math.min(100, a.planned > 0 ? (a.paid / a.planned) * 100 : 0)}%` }} /></div>
+              {a.paid > a.planned + 0.005 && <div className="overrun">Superato lo stanziamento di {euro(a.paid - a.planned)}</div>}
+            </article>
+          ))}
         </div>
+      )}
+    </section>
+  );
+}
 
-        <div className="control-side contascatti-side-mini">
-          <div className="control-mini">
-            <Target size={21} />
-            <div>
-              <span>Obiettivo mese</span>
-              <strong>{meter.obiettivoKwh || 0} kWh</strong>
-              <small>Residuo: {stats.residuoKwh.toLocaleString("it-IT")} kWh</small>
-            </div>
-          </div>
+function PaymentsPanel({ data, result, updateMonth }) {
+  const [allocationId, setAllocationId] = useState("");
+  const [amount, setAmount] = useState("");
+  const [date, setDate] = useState(todayLocal());
+  const [note, setNote] = useState("");
 
-          <div className="control-mini">
-            <TrendingUp size={21} />
-            <div>
-              <span>Budget usato</span>
-              <strong>{stats.percentuale}%</strong>
-              <small>Rispetto all'obiettivo kWh</small>
-            </div>
-          </div>
-        </div>
-      </section>
+  const selected = data.allocations.find((a) => a.id === allocationId);
+  const selectedFund = selected ? data.funds.find((f) => f.id === selected.fundId) : null;
 
-      <main className="contascatti-grid">
-        <section className="panel contascatti-panel">
-          <PanelTitle color="green" icon={<Zap />} title="Letture contascatti" subtitle="monitoraggio consumi Enel" />
+  const addPayment = () => {
+    if (!selected) return alert("Scegli prima la spesa da pagare.");
+    if (!selected.fundId) return alert("Questa spesa non ha ancora un fondo assegnato.");
+    const val = Number(amount) || 0;
+    if (val <= 0) return;
+    updateMonth((m) => m.payments.push({ id: makeId(), date, allocationId, amount: val, note: note.trim() }));
+    setAmount(""); setNote("");
+  };
 
-          <div className="meter-form">
-            <label>
-              <span>Lettura inizio mese</span>
-              <NumberField value={meter.letturaIniziale} onChange={(value) => updateMeter("letturaIniziale", value)} />
-            </label>
-            <label>
-              <span>Lettura attuale</span>
-              <NumberField value={meter.letturaAttuale} onChange={(value) => updateMeter("letturaAttuale", value)} />
-            </label>
-            <label>
-              <span>Costo €/kWh</span>
-              <NumberField value={meter.costoKwh} onChange={(value) => updateMeter("costoKwh", value)} />
-            </label>
-            <label>
-              <span>Quota fissa mese</span>
-              <NumberField value={meter.quotaFissa} onChange={(value) => updateMeter("quotaFissa", value)} />
-            </label>
-            <label>
-              <span>Obiettivo kWh mese</span>
-              <NumberField value={meter.obiettivoKwh} onChange={(value) => updateMeter("obiettivoKwh", value)} />
-            </label>
-          </div>
+  const removePayment = (id) => updateMonth((m) => { m.payments = m.payments.filter((p) => p.id !== id); });
 
-          <div className="meter-summary-strip">
-            <div>
-              <span>Consumo mese</span>
-              <strong>{stats.consumoKwh.toLocaleString("it-IT")} kWh</strong>
-            </div>
-            <div>
-              <span>Residuo obiettivo</span>
-              <strong className={stats.residuoKwh < 0 ? "danger" : ""}>{stats.residuoKwh.toLocaleString("it-IT")} kWh</strong>
-            </div>
-            <div>
-              <span>Costo stimato</span>
-              <strong>{euro(stats.costoStimato)}</strong>
-            </div>
-          </div>
-        </section>
+  return (
+    <section className="panel payments-panel">
+      <PanelHead icon={ReceiptText} title="3. Registra una spesa o una rata" subtitle="Il pagamento scala automaticamente dal fondo assegnato" />
+      <div className="payment-form">
+        <label><span>Data</span><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+        <label><span>Voce</span><select value={allocationId} onChange={(e) => setAllocationId(e.target.value)}><option value="">Scegli spesa</option>{data.allocations.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
+        <label><span>Importo</span><input type="number" step="0.01" min="0" placeholder="0,00 €" value={amount} onChange={(e) => setAmount(e.target.value)} /></label>
+        <label><span>Nota</span><input placeholder="Facoltativa" value={note} onChange={(e) => setNote(e.target.value)} /></label>
+        <div className="source-preview"><span>Scala da</span><strong>{selectedFund?.name || "—"}</strong></div>
+        <button className="pay-btn" onClick={addPayment}><CheckCircle2 size={18} /> Registra pagamento</button>
+      </div>
 
-        <section className="panel contascatti-history-panel">
-          <PanelTitle color="blue" icon={<NotebookPen />} title="Storico letture" subtitle="salva le letture periodiche" />
+      {result.payments.length === 0 ? <Empty text="Nessun pagamento registrato in questo mese." /> : (
+        <div className="table-wrap">
           <table>
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Lettura</th>
-                <th>Consumo giornata</th>
-                <th>Totale progressivo</th>
-                <th>Note</th>
-                <th></th>
-              </tr>
-            </thead>
+            <thead><tr><th>Data</th><th>Spesa</th><th>Fondo</th><th>Nota</th><th>Importo</th><th></th></tr></thead>
             <tbody>
-              {(meter.movimenti || []).map((row, index, rows) => {
-                const lettura = Number(row.lettura) || 0;
-                const previousReading = index === 0
-                  ? Number(meter.letturaIniziale) || 0
-                  : Number(rows[index - 1]?.lettura) || Number(meter.letturaIniziale) || 0;
-                const consumoGiorno = Math.max(0, lettura - previousReading);
-                const totaleProgressivo = Math.max(0, lettura - (Number(meter.letturaIniziale) || 0));
-                return (
-                  <tr key={row.id}>
-                    <td><TextField value={row.date} onChange={(value) => updateMonth((d) => { const r = findReading(ensureMeter(d), row.id); if (r) r.date = value; })} /></td>
-                    <td><NumberField value={row.lettura} onChange={(value) => updateMonth((d) => { const r = findReading(ensureMeter(d), row.id); if (r) r.lettura = value; })} /></td>
-                    <td className="money strong">{consumoGiorno.toLocaleString("it-IT")} kWh</td>
-                    <td className="money">{totaleProgressivo.toLocaleString("it-IT")} kWh</td>
-                    <td><TextField value={row.note} placeholder="es. sera" onChange={(value) => updateMonth((d) => { const r = findReading(ensureMeter(d), row.id); if (r) r.note = value; })} /></td>
-                    <td>
-                      <button className="icon-button" onClick={() => updateMonth((d) => {
-                        const m = ensureMeter(d);
-                        m.movimenti = m.movimenti.filter((item) => item.id !== row.id);
-                      })}>
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+              {result.payments.map((p) => (
+                <tr key={p.id}>
+                  <td>{formatDate(p.date)}</td>
+                  <td className="strong">{p.allocationName}</td>
+                  <td>{p.fundName}</td>
+                  <td>{p.note || "—"}</td>
+                  <td className="money strong">{euro(p.amount)}</td>
+                  <td><button className="icon-btn" onClick={() => removePayment(p.id)}><Trash2 size={16} /></button></td>
+                </tr>
+              ))}
             </tbody>
           </table>
-          <button className="add-button" onClick={addReading}><Plus size={18} /> Aggiungi lettura</button>
-        </section>
-
-        <section className="insights-panel contascatti-analysis">
-          <div className="section-heading">
-            <BarChart3 size={20} />
-            <div>
-              <h3>Analisi consumi</h3>
-              <p>Capisci subito quanto stai consumando</p>
-            </div>
-          </div>
-
-          <div className="category-bars">
-            <div className="category-bar-row">
-              <div className="category-bar-title">
-                <span>Obiettivo kWh</span>
-                <strong>{stats.consumoKwh.toLocaleString("it-IT")} / {meter.obiettivoKwh || 0} kWh</strong>
-              </div>
-              <div className="wide-progress">
-                <div style={{ width: `${Math.min(100, stats.percentuale)}%` }} />
-              </div>
-              <small>{stats.percentuale}% usato</small>
-            </div>
-          </div>
-
-          <div className="smart-tip">
-            <Info size={18} />
-            <span>Costo stimato = kWh consumati × costo €/kWh + quota fissa.</span>
-          </div>
-        </section>
-
-        <section className="guide-panel contascatti-guide">
-          <h3>⚡ Come funziona</h3>
-          <ol>
-            <li>Inserisci la lettura del contatore a inizio mese.</li>
-            <li>Aggiorna la lettura attuale quando vuoi.</li>
-            <li>Il consumo giornata è la differenza tra la lettura del giorno e quella precedente.</li>
-            <li>Imposta costo €/kWh e quota fissa per stimare la bolletta.</li>
-            <li>Salva letture periodiche nello storico.</li>
-          </ol>
-        </section>
-      </main>
-    </>
-  );
-}
-
-function ensureMeter(data) {
-  if (!data.contascatti) data.contascatti = emptyMonth().contascatti;
-  if (!Array.isArray(data.contascatti.movimenti)) data.contascatti.movimenti = [];
-  return data.contascatti;
-}
-
-function findReading(meter, id) {
-  return meter.movimenti.find((item) => item.id === id);
-}
-
-function calculateContascatti(meter = {}) {
-  const start = Number(meter.letturaIniziale) || 0;
-  const readings = Array.isArray(meter.movimenti) ? meter.movimenti : [];
-  const lastSavedReading = readings.length ? Number(readings[readings.length - 1]?.lettura) || 0 : 0;
-  const manualCurrent = Number(meter.letturaAttuale) || 0;
-  const current = manualCurrent > 0 ? manualCurrent : lastSavedReading;
-  const costoKwh = Number(meter.costoKwh) || 0;
-  const quotaFissa = Number(meter.quotaFissa) || 0;
-  const obiettivo = Number(meter.obiettivoKwh) || 0;
-  const consumoKwh = Math.max(0, current - start);
-  const costoStimato = consumoKwh * costoKwh + quotaFissa;
-  const residuoKwh = obiettivo - consumoKwh;
-  const percentuale = obiettivo > 0 ? Math.round((consumoKwh / obiettivo) * 100) : 0;
-  return { consumoKwh, costoStimato, residuoKwh, percentuale, current };
-}
-
-
-function FundsCard({ data, result, updateMonth }) {
-  return (
-    <section className="panel funds-panel">
-      <PanelTitle color="green" icon={<PiggyBank />} title="Fondi disponibili" subtitle="tutto modificabile, parte da zero" />
-      <table>
-        <thead>
-          <tr>
-            <th>Fondo</th>
-            <th>Iniziale</th>
-            <th>Scalato spese</th>
-            <th>Scalato fisse</th>
-            <th>Residuo attuale</th>
-          </tr>
-        </thead>
-        <tbody>
-          {FUNDS.map(({ key, icon: Icon }) => (
-            <tr key={key}>
-              <td className="name-cell"><Icon size={18} /> {key}</td>
-              <td><NumberField value={data.funds[key]} onChange={(value) => updateMonth((d) => (d.funds[key] = value))} /></td>
-              <td className="money">{euro(result.funds[key].variable)}</td>
-              <td className="money">{euro(result.funds[key].fixed)}</td>
-              <td className={`money strong ${result.funds[key].current < 0 ? "danger" : ""}`}>{euro(result.funds[key].current)}</td>
-            </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td>Totale fondi</td>
-            <td>{euro(result.totalInitial)}</td>
-            <td>{euro(result.totalVariable)}</td>
-            <td>{euro(result.totalFixed)}</td>
-            <td>{euro(result.totalCurrent)}</td>
-          </tr>
-        </tfoot>
-      </table>
-    </section>
-  );
-}
-
-function DailySpendingPanel({ data, result }) {
-  const dailyMap = {};
-  data.movements.forEach((move) => {
-    const amount = Number(move.amount) || 0;
-    if (amount <= 0) return;
-    const label = move.date || "Senza data";
-    dailyMap[label] = (dailyMap[label] || 0) + amount;
-  });
-
-  const days = Object.entries(dailyMap)
-    .map(([date, amount]) => ({ date, amount }))
-    .sort((a, b) => parseItalianDate(a.date) - parseItalianDate(b.date));
-  const total = days.reduce((sum, item) => sum + item.amount, 0);
-  const palette = ["#0e63b6", "#e83e67", "#12864b", "#f97316", "#7e22ce", "#0f766e", "#f59e0b", "#64748b"];
-  let cursor = 0;
-  const stops = days.map((item, index) => {
-    const start = cursor;
-    cursor += total > 0 ? (item.amount / total) * 100 : 0;
-    return `${palette[index % palette.length]} ${start}% ${cursor}%`;
-  });
-  const pieStyle = total > 0
-    ? { background: `conic-gradient(${stops.join(", ")})` }
-    : { background: "#e2e8f0" };
-
-  return (
-    <section className="panel daily-spending-panel">
-      <PanelTitle color="rose" icon={<PieChart />} title="Spese giorno per giorno" subtitle="nessun budget: conta solo ciò che registri davvero" />
-      <div className="daily-spending-content">
-        <div className="daily-pie-wrap">
-          <div className="daily-pie" style={pieStyle}>
-            <div className="daily-pie-hole">
-              <span>Totale mese</span>
-              <strong>{euro(total)}</strong>
-            </div>
-          </div>
-        </div>
-        <div className="daily-legend">
-          {days.length === 0 && <div className="empty-state">Aggiungi le spese nel registro: il grafico comparirà automaticamente.</div>}
-          {days.map((item, index) => (
-            <div className="daily-legend-row" key={`${item.date}-${index}`}>
-              <span className="daily-dot" style={{ background: palette[index % palette.length] }} />
-              <span>{item.date}</span>
-              <strong>{euro(item.amount)}</strong>
-              <small>{total > 0 ? `${Math.round((item.amount / total) * 100)}%` : "0%"}</small>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="budget-control-strip">
-        <div className="strip-card">
-          <TrendingDown size={18} />
-          <div><span>Spese variabili del mese</span><strong>{euro(result.totalVariable)}</strong></div>
-        </div>
-        <div className="strip-card">
-          <NotebookPen size={18} />
-          <div><span>Movimenti registrati</span><strong>{data.movements.filter((m) => Number(m.amount) > 0).length}</strong></div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function parseItalianDate(value) {
-  const match = String(value || "").match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (!match) return Number.MAX_SAFE_INTEGER;
-  return new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1])).getTime();
-}
-
-function SummaryPanel({ result }) {
-  const statusClass = result.freeMoney < 0 ? "danger" : result.freeMoney < 300 ? "attention" : "ok";
-  const savingRate = result.totalInitial > 0 ? Math.round((result.freeMoney / result.totalInitial) * 100) : 0;
-
-  const topCategory = Object.entries(result.budgets || {})
-    .map(([name, item]) => ({ name, spent: Number(item.spent) || 0 }))
-    .sort((a, b) => b.spent - a.spent)[0] || { name: "-", spent: 0 };
-
-  const topFund = Object.entries(result.funds || {})
-    .map(([name, item]) => ({ name, used: (Number(item.variable) || 0) + (Number(item.fixed) || 0) }))
-    .sort((a, b) => b.used - a.used)[0] || { name: "-", used: 0 };
-
-  return (
-    <aside className="summary-panel analysis-panel-right">
-      <div className="summary-title"><Sparkles size={18} /> Analisi del mese</div>
-
-      <div className="right-hero">
-        <span>Libertà del mese</span>
-        <strong className={result.forecast < 0 ? "danger" : ""}>{euro(result.forecast)}</strong>
-        <small>Quanto resta dopo le spese registrate e le rate ancora da pagare</small>
-      </div>
-
-      <div className="analysis-list">
-        <div className="analysis-row">
-          <span>IMPEGNI FISSI RESIDUI</span>
-          <strong>{euro(result.fixedToPay)}</strong>
-          <small>Importi con Pagato = No</small>
-        </div>
-        <div className="analysis-row">
-          <span>Categoria più usata</span>
-          <strong>{topCategory.name}</strong>
-          <small>{euro(topCategory.spent)}</small>
-        </div>
-        <div className="analysis-row">
-          <span>Fondo più utilizzato</span>
-          <strong>{topFund.name}</strong>
-          <small>{euro(topFund.used)}</small>
-        </div>
-        <div className="analysis-row">
-          <span>Spese variabili registrate</span>
-          <strong>{euro(result.totalVariable)}</strong>
-          <small>Somma delle spese inserite giorno per giorno</small>
-        </div>
-        <div className="analysis-row">
-          <span>Tasso libertà</span>
-          <strong className={savingRate < 0 ? "danger" : savingRate < 20 ? "attention" : ""}>{savingRate}%</strong>
-          <small>Soldi da gestire rispetto alle entrate</small>
-        </div>
-      </div>
-
-      <div className={`mini-kpi ${statusClass === "danger" ? "red-kpi" : statusClass === "attention" ? "yellow-kpi" : "green-kpi"}`}>
-        <span><CheckCircle2 size={18} /> Semaforo mese</span>
-        <strong>{result.freeMoney < 0 ? "RISCHIO" : result.freeMoney < 300 ? "ATTENZIONE" : "OK"}</strong>
-      </div>
-
-      {result.missingSources.length > 0 && (
-        <div className="alert-card">
-          <AlertTriangle size={18} />
-          <div>
-            <b>Fonti mancanti</b>
-            <span>{result.missingSources.length} voce/i pagate o spese senza fondo.</span>
-          </div>
         </div>
       )}
-
-      <div className="quote-card compact-quote">La disciplina di oggi<br />è la libertà di domani.<br />♡</div>
-    </aside>
-  );
-}
-
-function GuideCard() {
-  return (
-    <section className="guide-panel">
-      <h3>📌 Come funziona</h3>
-      <ol>
-        <li>Ogni mese parte con importi a zero.</li>
-        <li>Inserisci fondi, rate e spese reali giorno per giorno.</li>
-        <li>Se fai una spesa, scegli sempre da dove prendi i soldi.</li>
-        <li>Se una rata è pagata, scegli fonte e metti Pagato = Sì.</li>
-        <li>Il fondo scala in automatico e il riepilogo si aggiorna.</li>
-      </ol>
     </section>
   );
 }
 
-function MovementsCard({ data, updateMonth }) {
-  const addMovement = () => updateMonth((d) => {
-    d.movements.push({
-      id: makeId(),
-      date: new Date().toLocaleDateString("it-IT"),
-      category: CATEGORIES[0].key,
-      amount: 0,
-      source: "",
-      note: ""
-    });
-  });
-
+function MonthlyOverview({ result }) {
   return (
-    <section className="panel movements-panel">
-      <PanelTitle color="blue" icon={<NotebookPen />} title="Registro spese variabili" subtitle="storico movimenti del mese" />
-      <table>
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Categoria</th>
-            <th>Importo</th>
-            <th>Da dove li prendo</th>
-            <th>Note</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.movements.map((move) => {
-            const hasWarning = move.amount > 0 && !move.source;
-            return (
-              <tr key={move.id} className={hasWarning ? "row-warning" : ""}>
-                <td><TextField value={move.date} onChange={(value) => updateMonth((d) => findMove(d, move.id).date = value)} /></td>
-                <td>
-                  <SelectField value={move.category} options={CATEGORIES.map((c) => c.key)} onChange={(value) => updateMonth((d) => findMove(d, move.id).category = value)} />
-                </td>
-                <td><NumberField value={move.amount} onChange={(value) => updateMonth((d) => findMove(d, move.id).amount = value)} /></td>
-                <td>
-                  <SelectField value={move.source} options={FUNDS.map((f) => f.key)} placeholder="Scegli fondo" onChange={(value) => updateMonth((d) => findMove(d, move.id).source = value)} />
-                  {hasWarning && <small className="warning-inline">Scegli fondo</small>}
-                </td>
-                <td><TextField value={move.note} onChange={(value) => updateMonth((d) => findMove(d, move.id).note = value)} /></td>
-                <td>
-                  <button className="icon-button" onClick={() => updateMonth((d) => d.movements = d.movements.filter((m) => m.id !== move.id))}>
-                    <Trash2 size={16} />
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      <button className="add-button" onClick={addMovement}><Plus size={18} /> Aggiungi movimento</button>
+    <section className="summary-card">
+      <h2><Coins size={20} /> Situazione del mese</h2>
+      <div className="summary-line"><span>Soldi inseriti</span><strong>{euro(result.totalInitial)}</strong></div>
+      <div className="summary-line"><span>Destinati alle spese</span><strong>{euro(result.totalPlanned)}</strong></div>
+      <div className="summary-line emphasis"><span>Ancora liberi da assegnare</span><strong>{euro(result.freeToAssign)}</strong></div>
+      <div className="summary-line"><span>Pagamenti già effettuati</span><strong>{euro(result.totalPaid)}</strong></div>
+      <div className="summary-line"><span>Spese previste ancora da pagare</span><strong>{euro(result.totalReserved)}</strong></div>
+      <div className="summary-line"><span>Saldo reale attuale</span><strong>{euro(result.totalCurrent)}</strong></div>
+      <div className={`status-box ${result.freeToAssign < -0.005 ? "bad" : "good"}`}>
+        {result.freeToAssign < -0.005
+          ? `Hai assegnato ${euro(Math.abs(result.freeToAssign))} in più rispetto ai soldi disponibili.`
+          : `Dopo aver coperto tutte le spese previste ti restano ${euro(result.freeToAssign)} non ancora assegnati.`}
+      </div>
     </section>
   );
 }
 
-function FixedCard({ data, result, updateMonth }) {
+function CarryPanel({ month, year, result, carryToNextMonth }) {
+  const next = MONTHS[(MONTHS.indexOf(month) + 1) % 12];
   return (
-    <section className="panel fixed-panel">
-      <PanelTitle color="orange" icon={<ReceiptText />} title="Stanziamenti mensili / rate" subtitle="decidi prima gli importi: ogni spesa o rata li fa scalare" />
-      <table>
-        <thead>
-          <tr>
-            <th>Voce</th>
-            <th>Stanziato</th>
-            <th>Fondo / collegamento</th>
-            <th>Speso / pagato</th>
-            <th>Residuo</th>
-            <th>Stato</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Object.entries(data.fixed).map(([name, item]) => {
-            const allocation = VARIABLE_ALLOCATIONS[name];
-            const spent = allocation ? (result.budgets[allocation.category]?.spent || 0) : (isPaid(item.paid) ? Number(item.amount) || 0 : 0);
-            const remaining = Math.max(0, (Number(item.amount) || 0) - spent);
-            const paid = allocation ? remaining <= 0 && Number(item.amount) > 0 : isPaid(item.paid);
-            const missingSource = !allocation && paid && item.amount > 0 && !item.source;
-            return (
-              <tr key={name} className={missingSource ? "row-warning" : ""}>
-                <td className="name-cell">{name}</td>
-                <td><NumberField value={item.amount} onChange={(value) => updateMonth((d) => d.fixed[name].amount = value)} /></td>
-                <td>
-                  {allocation ? <small>Scalato dal Registro spese</small> : <>
-                    <SelectField value={item.source} options={FUNDS.map((f) => f.key)} placeholder="Scegli fondo" onChange={(value) => updateMonth((d) => d.fixed[name].source = value)} />
-                    {missingSource && <small className="warning-inline">Scegli fondo</small>}
-                  </>}
-                </td>
-                <td>
-                  {allocation ? <strong>{euro(spent)}</strong> : <SelectField value={item.paid} options={["Sì", "No"]} onChange={(value) => updateMonth((d) => d.fixed[name].paid = value)} />}
-                </td>
-                <td className="money strong">{euro(remaining)}</td>
-                <td><span className={`status-badge ${paid ? "paid" : "pending"}`}>{allocation ? (paid ? "Esaurito" : "Disponibile") : (paid ? "Pagata" : "Da pagare")}</span></td>
-              </tr>
-            );
-          })}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td>Totale fisse/rate</td>
-            <td>{euro(result.fixedTotal)}</td>
-            <td></td>
-            <td>Già pagate</td>
-            <td>Da pagare: {euro(result.fixedToPay)}</td>
-            <td>Pagate: {euro(result.fixedPaid)}</td>
-          </tr>
-        </tfoot>
-      </table>
+    <section className="summary-card carry-card">
+      <h2><ArrowRight size={20} /> Fine mese</h2>
+      <p>Quando hai finito {month}, puoi portare nel mese successivo solo i <strong>saldi reali rimasti</strong> nei fondi.</p>
+      <div className="carry-value"><span>Residuo reale complessivo</span><strong>{euro(result.totalCurrent)}</strong></div>
+      <button className="primary-btn wide" onClick={carryToNextMonth}>Porta i residui in {next}</button>
+      <small>Le vecchie spese e gli stanziamenti non vengono copiati: nel nuovo mese li inserirai di nuovo da zero.</small>
     </section>
   );
 }
 
-
-function ProgressBar({ spent, budget }) {
-  const percentage = budget > 0 ? Math.min(100, Math.max(0, (spent / budget) * 100)) : 0;
-  const level = percentage >= 90 ? "danger" : percentage >= 70 ? "warn" : "safe";
-
-  return (
-    <div className="progress-wrap" title={`${Math.round(percentage)}% usato`}>
-      <div className={`progress-fill ${level}`} style={{ width: `${percentage}%` }} />
-    </div>
-  );
+function PanelHead({ icon: Icon, title, subtitle }) {
+  return <div className="panel-head"><div className="panel-head-icon"><Icon size={21} /></div><div><h2>{title}</h2><p>{subtitle}</p></div></div>;
 }
 
-function PanelTitle({ color, icon, title, subtitle }) {
-  return (
-    <div className={`panel-title ${color}`}>
-      <div>{icon}<h2>{title}</h2></div>
-      <p>{subtitle}</p>
-    </div>
-  );
+function Empty({ text }) {
+  return <div className="empty"><CalendarDays size={22} /><span>{text}</span></div>;
 }
 
-function NumberField({ value, onChange }) {
-  return <input className="input number" type="number" step="0.01" value={Number(value) || 0} onChange={(e) => onChange(Number(e.target.value) || 0)} />;
+function MoneyInput({ value, onChange }) {
+  return <input className="table-input money-input" type="number" step="0.01" min="0" value={value} onChange={(e) => onChange(Number(e.target.value) || 0)} />;
 }
 
-function TextField({ value, onChange, placeholder = "" }) {
-  return <input className="input" value={value || ""} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />;
-}
-
-function SelectField({ value, onChange, options, placeholder = "Scegli" }) {
-  return (
-    <select className="input select" value={value || ""} onChange={(e) => onChange(e.target.value)}>
-      <option value="">{placeholder}</option>
-      {options.map((option) => <option value={option} key={option}>{option}</option>)}
-    </select>
-  );
-}
-
-function findMove(data, id) {
-  return data.movements.find((m) => m.id === id);
-}
-
-function isPaid(value) {
-  return String(value || "").toLowerCase().startsWith("s");
+function getMonth(store, year, month) {
+  const y = String(year);
+  return normalizeMonth(store?.years?.[y]?.[month]);
 }
 
 function calculateMonth(data) {
-  const spentByFund = Object.fromEntries(FUNDS.map(({ key }) => [key, 0]));
-  const fixedByFund = Object.fromEntries(FUNDS.map(({ key }) => [key, 0]));
-  const spentByCategory = Object.fromEntries(CATEGORIES.map(({ key }) => [key, 0]));
-  const missingSources = [];
+  const paidByAllocation = {};
+  const paidByFund = {};
 
-  data.movements.forEach((item) => {
-    const amount = Number(item.amount) || 0;
-    spentByCategory[item.category] = (spentByCategory[item.category] || 0) + amount;
-    if (amount > 0 && !item.source) missingSources.push(`Movimento: ${item.category}`);
-    if (item.source) spentByFund[item.source] += amount;
+  data.payments.forEach((p) => {
+    paidByAllocation[p.allocationId] = (paidByAllocation[p.allocationId] || 0) + (Number(p.amount) || 0);
+    const allocation = data.allocations.find((a) => a.id === p.allocationId);
+    if (allocation?.fundId) paidByFund[allocation.fundId] = (paidByFund[allocation.fundId] || 0) + (Number(p.amount) || 0);
   });
 
-  let fixedTotal = 0;
-  let fixedPaid = 0;
-  let fixedToPay = 0;
-
-  Object.entries(data.fixed).forEach(([name, item]) => {
-    const amount = Number(item.amount) || 0;
-    fixedTotal += amount;
-
-    if (isPaid(item.paid)) {
-      fixedPaid += amount;
-      if (amount > 0 && !item.source) missingSources.push(`Rata pagata senza fondo: ${name}`);
-      if (item.source) fixedByFund[item.source] += amount;
-    } else {
-      fixedToPay += amount;
-    }
-  });
-
-  const funds = {};
-  FUNDS.forEach(({ key }) => {
-    const initial = Number(data.funds[key]) || 0;
-    const variable = spentByFund[key] || 0;
-    const fixed = fixedByFund[key] || 0;
-    funds[key] = { initial, variable, fixed, current: initial - variable - fixed };
-  });
-
-  const budgets = {};
-  CATEGORIES.forEach(({ key }) => {
-    const budget = Number(data.budgets[key]) || 0;
-    const spent = spentByCategory[key] || 0;
-    budgets[key] = { budget, spent, left: budget - spent };
-  });
-
-  const totalInitial = sumObject(funds, "initial");
-  const totalVariable = sumObject(funds, "variable");
-  const totalFixed = sumObject(funds, "fixed");
-  const totalCurrent = sumObject(funds, "current");
-
-  // I vecchi campi budget restano solo per compatibilità con i dati salvati,
-  // ma non influenzano più alcun calcolo.
-  const totalBudget = 0;
-  const totalBudgetSpent = sumObject(budgets, "spent");
-  const totalBudgetLeft = 0;
-  const quickTotal = 0;
-
-  const futureCommitments = fixedToPay;
-  const freeMoney = totalCurrent - fixedToPay;
-  const forecast = freeMoney;
-
-  return {
-    funds,
-    budgets,
-    totalInitial,
-    totalVariable,
-    totalFixed,
-    totalCurrent,
-    totalBudget,
-    totalBudgetSpent,
-    totalBudgetLeft,
-    quickTotal,
-    fixedTotal,
-    fixedPaid,
-    fixedToPay,
-    futureCommitments,
-    freeMoney,
-    forecast,
-    missingSources
-  };
-}
-
-function findGoal(data, id) {
-  return data.goals.find((goal) => goal.id === id);
-}
-
-async function saveStateToCloud(state, setCloudStatus) {
-  try {
-    setCloudStatus("Salvataggio cloud...");
-
-    const payload = {
-      mese: CLOUD_ROW_MONTH,
-      anno: CLOUD_ROW_YEAR,
-      dati: state,
-      updated_at: new Date().toISOString()
+  const allocations = data.allocations.map((a) => {
+    const paid = paidByAllocation[a.id] || 0;
+    return {
+      ...a,
+      paid,
+      remaining: Math.max(0, (Number(a.planned) || 0) - paid),
+      fundName: data.funds.find((f) => f.id === a.fundId)?.name || "Non assegnato"
     };
-
-    const { data: existing, error: selectError } = await supabase
-      .from("bilanci")
-      .select("id")
-      .eq("mese", CLOUD_ROW_MONTH)
-      .eq("anno", CLOUD_ROW_YEAR)
-      .limit(1)
-      .maybeSingle();
-
-    if (selectError) throw selectError;
-
-    const response = existing?.id
-      ? await supabase.from("bilanci").update(payload).eq("id", existing.id)
-      : await supabase.from("bilanci").insert(payload);
-
-    if (response.error) throw response.error;
-
-    setCloudStatus("Cloud attivo");
-  } catch (error) {
-    console.error("Errore salvataggio Supabase:", error);
-    setCloudStatus("Errore cloud");
-  }
-}
-
-function getDaysLeftInMonth(year, monthName) {
-  const monthIndex = MONTHS.indexOf(monthName);
-  const now = new Date();
-  const targetYear = Number(year) || now.getFullYear();
-  const end = new Date(targetYear, monthIndex + 1, 0);
-  const basis = now.getMonth() === monthIndex && now.getFullYear() === targetYear ? now : new Date(targetYear, monthIndex, 1);
-  return Math.max(0, Math.ceil((end - basis) / (1000 * 60 * 60 * 24)));
-}
-
-function sumObject(object, key) {
-  return Object.values(object).reduce((total, item) => total + (Number(item[key]) || 0), 0);
-}
-
-
-function downloadJsonBackup(state) {
-  const payload = {
-    exportedAt: new Date().toISOString(),
-    app: "Bilancio Famiglia Premium",
-    version: "V12.5.5 Year separated",
-    data: state
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `bilancio-famiglia-backup-${new Date().toISOString().slice(0,10)}.json`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
-function calculateAnnualStats(state) {
-  const monthState = state?.years ? getYearMonths(state, new Date().getFullYear()) : state;
-  const rows = Object.entries(monthState || {}).map(([monthName, data]) => {
-    try {
-      const r = calculateMonth(data);
-      return {
-        month: monthName,
-        initial: r.totalInitial || 0,
-        spent: (r.totalBudgetSpent || 0) + (r.fixedPaid || 0),
-        free: r.freeMoney || 0,
-        fixedToPay: r.fixedToPay || 0
-      };
-    } catch {
-      return { month: monthName, initial: 0, spent: 0, free: 0, fixedToPay: 0 };
-    }
   });
 
-  const active = rows.filter((r) => r.initial !== 0 || r.spent !== 0 || r.free !== 0);
-  const best = [...rows].sort((a, b) => b.free - a.free)[0];
-  const worst = [...rows].sort((a, b) => a.free - b.free)[0];
-  const bestActive = active.length ? [...active].sort((a, b) => b.free - a.free)[0] : null;
-  const worstActive = active.length ? [...active].sort((a, b) => a.free - b.free)[0] : null;
-  const totalFree = active.reduce((s, r) => s + r.free, 0);
-  const activeMonths = active.length;
+  const funds = data.funds.map((f) => {
+    const paid = paidByFund[f.id] || 0;
+    const reserved = allocations
+      .filter((a) => a.fundId === f.id)
+      .reduce((sum, a) => sum + a.remaining, 0);
+    const current = (Number(f.amount) || 0) - paid;
+    const free = current - reserved;
+    return { ...f, paid, reserved, current, free };
+  });
 
-  return { rows, best, worst, bestActive, worstActive, totalFree, activeMonths };
+  const totalInitial = funds.reduce((s, f) => s + (Number(f.amount) || 0), 0);
+  const totalPaid = data.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+  const totalPlanned = allocations.reduce((s, a) => s + (Number(a.planned) || 0), 0);
+  const totalReserved = allocations.reduce((s, a) => s + a.remaining, 0);
+  const totalCurrent = totalInitial - totalPaid;
+  const freeToAssign = totalCurrent - totalReserved;
+
+  const payments = [...data.payments]
+    .map((p) => {
+      const allocation = data.allocations.find((a) => a.id === p.allocationId);
+      const fund = data.funds.find((f) => f.id === allocation?.fundId);
+      return { ...p, allocationName: allocation?.name || "Voce eliminata", fundName: fund?.name || "—" };
+    })
+    .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+  return { funds, allocations, payments, totalInitial, totalPaid, totalPlanned, totalReserved, totalCurrent, freeToAssign };
 }
 
+function todayLocal() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
-function countSavedItems(state) {
-  const months = state?.years ? Object.values(state.years).flatMap((year) => Object.values(year || {})) : Object.values(state || {});
-  return months.reduce((total, month) => {
-    const movementCount = Array.isArray(month?.movements) ? month.movements.filter((m) => Number(m.amount) > 0).length : 0;
-    const fixedCount = month?.fixed ? Object.values(month.fixed).filter((f) => Number(f.amount) > 0).length : 0;
-    return total + movementCount + fixedCount;
-  }, 0);
+function formatDate(value) {
+  if (!value) return "—";
+  const [y, m, d] = value.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function downloadBackup(store) {
+  const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), app: "Bilancio Famiglia", version: "zero-based-v1", data: store }, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `bilancio-famiglia-${todayLocal()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 createRoot(document.getElementById("root")).render(<App />);
