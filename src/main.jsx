@@ -3,7 +3,8 @@ import { createRoot } from "react-dom/client";
 import {
   Wallet, Plus, Trash2, Landmark, ReceiptText, PiggyBank,
   ArrowRight, CheckCircle2, CalendarDays, RotateCcw, Download,
-  Coins, CircleDollarSign, Banknote, Layers3, Info, Pencil, Undo2, ShieldCheck, AlertTriangle
+  Coins, CircleDollarSign, Banknote, Layers3, Info, Pencil, Undo2, ShieldCheck, AlertTriangle,
+  Home, ListPlus, History, Settings, Moon, BarChart3, Zap, ChevronRight
 } from "lucide-react";
 import "./style.css";
 
@@ -168,48 +169,52 @@ function App() {
   };
 
   return (
-    <div className="app-shell">
-      <Header month={month} setMonth={setMonth} year={year} setYear={setYear} resetMonth={resetMonth} />
+    <div className="app-shell ultra-shell">
+      <aside className="app-sidebar">
+        <div className="sidebar-brand"><div className="sidebar-logo"><PiggyBank size={28}/></div><div><strong>BILANCIO</strong><span>FAMIGLIA</span></div></div>
+        <nav className="sidebar-nav">
+          <a className="active" href="#panoramica"><Home size={19}/> Panoramica</a>
+          <a href="#fondi"><Wallet size={19}/> Fondi</a>
+          <a href="#registra"><Pencil size={19}/> Registra spesa</a>
+          <a href="#spese"><Landmark size={19}/> Spese da coprire</a>
+          <a href="#storico"><History size={19}/> Storico pagamenti</a>
+          <a href="#situazione"><BarChart3 size={19}/> Situazione del mese</a>
+          <a href="#fine-mese"><CalendarDays size={19}/> Fine mese</a>
+          <a href="#impostazioni"><Settings size={19}/> Impostazioni</a>
+        </nav>
+        <div className="sidebar-bottom"><div className="theme-pill"><Moon size={17}/> Tema scuro <span className="fake-switch"></span></div><div className="month-mini"><CalendarDays size={18}/><div><strong>{month} {year}</strong><span>Bilancio mensile</span></div></div></div>
+      </aside>
 
-      <section className="explain-strip">
-        <Info size={20} />
-        <span>
-          Prima <strong>stanzi</strong> quanto vuoi destinare alle spese. Solo quando paghi scegli da quale fondo scalare i soldi, in base alla disponibilità del momento.
-        </span>
-      </section>
+      <main className="main-workspace" id="panoramica">
+        <Header month={month} setMonth={setMonth} year={year} setYear={setYear} resetMonth={resetMonth} />
+        <div id="fondi" className="dashboard-title"><span>FONDI DISPONIBILI</span><i></i></div>
+        <section className="funds-dashboard">
+          <aside className="funds-side funds-side-left">
+            <Metric icon={Banknote} label="Disponibilità totale" value={euro(result.totalInitial)} tone="green" />
+            <Metric icon={ReceiptText} label="Già pagato" value={euro(result.totalPaid)} tone="blue" />
+            <Metric icon={Layers3} label="Già impegnato" value={euro(result.totalPlanned)} tone="orange" />
+          </aside>
+          <div className="funds-center-wrap"><FundsPanel data={data} result={result} updateMonth={updateMonth} /></div>
+          <aside className="funds-side funds-side-right">
+            <Metric icon={CircleDollarSign} label="Disponibilità libera" value={euro(result.freeToAssign)} tone={result.freeToAssign < 0 ? "red" : "green"} />
+            <Metric icon={Landmark} label="Spese da coprire" value={euro(result.totalReserved)} tone="blue" />
+          </aside>
+        </section>
 
-      <section className="funds-dashboard">
-        <aside className="funds-side funds-side-left">
-          <Metric icon={Banknote} label="Disponibilità totale" value={euro(result.totalInitial)} tone="green" />
-          <Metric icon={ReceiptText} label="Già pagato" value={euro(result.totalPaid)} tone="blue" />
-          <Metric icon={Layers3} label="Già impegnato" value={euro(result.totalPlanned)} tone="orange" />
-        </aside>
+        <div id="registra"><PaymentsPanel data={data} result={result} updateMonth={updateMonth} /></div>
+        <div id="spese" className="allocations-full-wrap"><AllocationsPanel data={data} result={result} updateMonth={updateMonth} /></div>
+        <section className="bottom-grid" id="situazione">
+          <MonthlyOverview result={result} />
+          <div id="fine-mese"><CarryPanel month={month} year={year} result={result} carryToNextMonth={carryToNextMonth} /></div>
+        </section>
+        <footer className="footer-tools" id="impostazioni"><button className="secondary-btn" onClick={() => downloadBackup(store)}><Download size={17} /> Scarica backup JSON</button><span><ShieldCheck size={16}/> I dati restano salvati nel tuo browser.</span></footer>
+      </main>
 
-        <div className="funds-center-wrap">
-          <FundsPanel data={data} result={result} updateMonth={updateMonth} />
-        </div>
-
-        <aside className="funds-side funds-side-right">
-          <Metric icon={CircleDollarSign} label="Disponibilità libera" value={euro(result.freeToAssign)} tone={result.freeToAssign < 0 ? "red" : "green"} />
-          <Metric icon={Landmark} label="Spese da coprire" value={euro(result.totalReserved)} tone="blue" />
-        </aside>
-      </section>
-
-      <div className="allocations-full-wrap">
-        <AllocationsPanel data={data} result={result} updateMonth={updateMonth} />
-      </div>
-
-      <PaymentsPanel data={data} result={result} updateMonth={updateMonth} />
-
-      <section className="bottom-grid">
-        <MonthlyOverview result={result} />
-        <CarryPanel month={month} year={year} result={result} carryToNextMonth={carryToNextMonth} />
-      </section>
-
-      <footer className="footer-tools">
-        <button className="secondary-btn" onClick={() => downloadBackup(store)}><Download size={17} /> Scarica backup JSON</button>
-        <span>I dati di questa versione partono da zero e vengono salvati nel browser.</span>
-      </footer>
+      <aside className="right-rail">
+        <section className="rail-card situation-card"><h3>SITUAZIONE DEL MESE</h3><div className="coverage-ring" style={{'--pct': `${Math.max(0, Math.min(100, result.totalPlanned ? (result.totalPaid/result.totalPlanned)*100 : 0))}%`}}><div><strong>{result.totalPlanned ? Math.round((result.totalPaid/result.totalPlanned)*100) : 0}%</strong><span>copertura</span></div></div><div className="rail-stat"><span>Soldi iniziali</span><strong>{euro(result.totalInitial)}</strong></div><div className="rail-stat"><span>Pagamenti effettuati</span><strong className="amber">{euro(result.totalPaid)}</strong></div><div className="rail-stat"><span>Saldo attuale</span><strong className="emerald">{euro(result.totalCurrent)}</strong></div></section>
+        <section className="rail-card"><h3><Zap size={18}/> AZIONI RAPIDE</h3><a href="#registra"><span className="quick-icon green"><Pencil size={18}/></span><div><strong>Registra una spesa</strong><small>Scala da stanziamenti</small></div><ChevronRight size={18}/></a><a href="#spese"><span className="quick-icon orange"><Landmark size={18}/></span><div><strong>Paga una rata</strong><small>Da fondi disponibili</small></div><ChevronRight size={18}/></a><a href="#storico"><span className="quick-icon blue"><History size={18}/></span><div><strong>Vai allo storico</strong><small>Vedi tutti i pagamenti</small></div><ChevronRight size={18}/></a></section>
+        <section className="rail-card"><h3><CalendarDays size={18}/> RIEPILOGO</h3><div className="rail-stat"><span>Da coprire</span><strong>{euro(result.totalReserved)}</strong></div><div className="rail-stat"><span>Libero</span><strong className="emerald">{euro(result.freeToAssign)}</strong></div></section>
+      </aside>
     </div>
   );
 }
@@ -269,7 +274,7 @@ function FundsPanel({ data, result, updateMonth }) {
 
   return (
     <section className="panel">
-      <PanelHead icon={Wallet} title="1. Fondi disponibili" subtitle="Inserisci da dove arrivano i soldi del mese" />
+      <PanelHead icon={Wallet} title="Fondi disponibili" subtitle="Inserisci da dove arrivano i soldi del mese" />
       <div className="entry-row fund-entry">
         <input placeholder="Es. Giulia, Extra, Residuo banca" value={name} onChange={(e) => setName(e.target.value)} />
         <input type="number" step="0.01" min="0" placeholder="Importo €" value={amount} onChange={(e) => setAmount(e.target.value)} />
@@ -336,7 +341,7 @@ function AllocationsPanel({ data, result, updateMonth }) {
 
   return (
     <section className="panel">
-      <PanelHead icon={Landmark} title="2. Spese da coprire" subtitle="Stanzia gli importi ora; sceglierai il fondo solo quando paghi" />
+      <PanelHead icon={Landmark} title="Spese da coprire" subtitle="Stanzia gli importi ora; sceglierai il fondo solo quando paghi" />
       <div className="allocation-form">
         <input placeholder="Es. Mutuo, Alimentari, Benzina…" value={name} onChange={(e) => setName(e.target.value)} />
         <select value={type} onChange={(e) => setType(e.target.value)}>{TYPES.map((t) => <option key={t}>{t}</option>)}</select>
@@ -475,7 +480,7 @@ function PaymentsPanel({ data, result, updateMonth }) {
 
   return (
     <section className="panel payments-panel">
-      <PanelHead icon={ReceiptText} title="3. Registra una spesa" subtitle="Qui trovi solo gli stanziamenti da scalare nel tempo, più ALTRO" />
+      <PanelHead icon={ReceiptText} title="Registra una spesa" subtitle="Qui trovi solo gli stanziamenti da scalare nel tempo, più ALTRO" />
       <div className="payment-form">
         <label><span>Data</span><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
         <label><span>Voce</span><select value={allocationId} onChange={(e) => setAllocationId(e.target.value)}><option value="">Scegli stanziamento</option>{spendableAllocations.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}<option value={OTHER_PAYMENT_ID}>ALTRO</option></select></label>
@@ -490,7 +495,7 @@ function PaymentsPanel({ data, result, updateMonth }) {
 
       {result.payments.length === 0 ? <Empty text="Nessun pagamento registrato in questo mese." /> : (
         <>
-          <div className="history-toolbar">
+          <div className="history-toolbar" id="storico">
             <strong>Storico pagamenti</strong>
             <div className="history-filters">
               <select value={filterVoice} onChange={(e) => setFilterVoice(e.target.value)}>
