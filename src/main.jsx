@@ -4,13 +4,14 @@ import {
   Wallet, Plus, Trash2, Landmark, ReceiptText, PiggyBank,
   ArrowRight, CheckCircle2, CalendarDays, RotateCcw, Download,
   Coins, CircleDollarSign, Banknote, Layers3, Info, Pencil, Undo2, ShieldCheck, AlertTriangle,
-  Home, ListPlus, History, Settings, Moon, BarChart3, Zap, ChevronRight
+  Home, ListPlus, History, Settings, Moon, Sun, BarChart3, Zap, ChevronRight
 } from "lucide-react";
 import "./style.css";
 
 const STORAGE_KEY = "bilancio-famiglia-zero-based-v2";
 const MONTH_KEY = "bilancio-famiglia-zero-based-month";
 const YEAR_KEY = "bilancio-famiglia-zero-based-year";
+const THEME_KEY = "bilancio-famiglia-theme";
 
 const MONTHS = [
   "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
@@ -94,6 +95,15 @@ function App() {
   const [store, setStore] = useState(loadStore);
   const [month, setMonth] = useState(localStorage.getItem(MONTH_KEY) || MONTHS[now.getMonth()]);
   const [year, setYear] = useState(Number(localStorage.getItem(YEAR_KEY)) || now.getFullYear());
+  const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || "dark");
+
+  const toggleTheme = () => {
+    setTheme((current) => {
+      const next = current === "dark" ? "light" : "dark";
+      localStorage.setItem(THEME_KEY, next);
+      return next;
+    });
+  };
 
   const data = getMonth(store, year, month);
   const result = useMemo(() => calculateMonth(data), [data]);
@@ -169,7 +179,7 @@ function App() {
   };
 
   return (
-    <div className="app-shell ultra-shell">
+    <div className={`app-shell ultra-shell theme-${theme}`}>
       <aside className="app-sidebar">
         <div className="sidebar-brand"><div className="sidebar-logo"><PiggyBank size={28}/></div><div><strong>BILANCIO</strong><span>FAMIGLIA</span></div></div>
         <nav className="sidebar-nav">
@@ -182,7 +192,7 @@ function App() {
           <a href="#fine-mese"><CalendarDays size={19}/> Fine mese</a>
           <a href="#impostazioni"><Settings size={19}/> Impostazioni</a>
         </nav>
-        <div className="sidebar-bottom"><div className="theme-pill"><Moon size={17}/> Tema scuro <span className="fake-switch"></span></div><div className="month-mini"><CalendarDays size={18}/><div><strong>{month} {year}</strong><span>Bilancio mensile</span></div></div></div>
+        <div className="sidebar-bottom"><button type="button" className="theme-pill theme-toggle" onClick={toggleTheme} aria-label={theme === "dark" ? "Attiva tema chiaro" : "Attiva tema scuro"}>{theme === "dark" ? <Moon size={17}/> : <Sun size={17}/>}<span>{theme === "dark" ? "Tema scuro" : "Tema chiaro"}</span><span className={`real-switch ${theme === "light" ? "light" : "dark"}`}><i /></span></button><div className="month-mini"><CalendarDays size={18}/><div><strong>{month} {year}</strong><span>Bilancio mensile</span></div></div></div>
       </aside>
 
       <main className="main-workspace" id="panoramica">
