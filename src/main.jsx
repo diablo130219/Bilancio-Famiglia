@@ -306,7 +306,7 @@ function App() {
 
           <main className="dashboard-grid">
             <FundsCard data={data} result={result} updateMonth={updateMonth} />
-            <BudgetCard data={data} result={result} updateMonth={updateMonth} />
+            <DailySpendingPanel data={data} result={result} />
             <SummaryPanel result={result} />
 
             <FixedCard data={data} result={result} updateMonth={updateMonth} />
@@ -378,7 +378,7 @@ function Header({ month, setMonth, year, updateYear, resetCurrentMonth, cloudSta
 function CloudToolsPanel({ state, result, cloudStatus, data }) {
   const annual = calculateAnnualStats(state);
   const monthlyOut = (result.totalBudgetSpent || 0) + (result.fixedPaid || 0);
-  const plannedOut = (result.totalBudget || 0) + (result.fixedTotal || 0);
+  const plannedOut = (result.totalVariable || 0) + (result.fixedTotal || 0);
   const savingRate = result.totalInitial > 0 ? Math.round((result.freeMoney / result.totalInitial) * 100) : 0;
   const active = annual.rows.filter((row) => row.initial !== 0 || row.spent !== 0 || row.free !== 0);
 
@@ -495,7 +495,6 @@ function AnnualMiniPanel({ state }) {
 
 
 function ManagerDashboard({ result, data, month }) {
-  const budgetUsed = result.totalBudget > 0 ? Math.min(999, Math.round((result.totalBudgetSpent / result.totalBudget) * 100)) : 0;
   const paidRatePercent = result.fixedTotal > 0 ? Math.round((result.fixedPaid / result.fixedTotal) * 100) : 0;
   const daysLeft = getDaysLeftInMonth(data.year, month);
   const status = result.freeMoney < 0 ? "Rischio" : result.freeMoney < 300 ? "Attenzione" : "Ok";
@@ -504,7 +503,7 @@ function ManagerDashboard({ result, data, month }) {
     <section className="manager-dashboard">
       <ManagerCard icon={<Wallet />} label="FONDI DISPONIBILI ORA" value={euro(result.totalCurrent)} tone={result.totalCurrent < 0 ? "red" : result.totalCurrent < 300 ? "yellow" : "green"} />
       <ManagerCard icon={<CalendarCheck />} label="Giorni a fine mese" value={daysLeft} suffix="giorni" tone="blue" />
-      <ManagerCard icon={<TrendingUp />} label="Budget consumato" value={`${budgetUsed}%`} tone={budgetUsed >= 90 ? "red" : budgetUsed >= 70 ? "yellow" : "green"} />
+      <ManagerCard icon={<TrendingDown />} label="Spese variabili mese" value={euro(result.totalVariable)} tone={result.totalVariable > result.totalInitial * .5 && result.totalInitial > 0 ? "yellow" : "green"} />
       <ManagerCard icon={<ReceiptText />} label="Impegni residui" value={euro(result.fixedToPay)} tone={result.fixedToPay > 0 ? "orange" : "green"} />
       <ManagerCard icon={<Sparkles />} label="Rate pagate" value={`${paidRatePercent}%`} tone="purple" />
       <ManagerCard icon={<CheckCircle2 />} label="Stato mese" value={status} tone={status === "Rischio" ? "red" : status === "Attenzione" ? "yellow" : "green"} />
@@ -528,9 +527,8 @@ function ManagerCard({ icon, label, value, suffix, tone }) {
 function InsightsPanel({ data, result }) {
   const categories = CATEGORIES.map(({ key }) => ({
     key,
-    spent: result.budgets[key]?.spent || 0,
-    budget: result.budgets[key]?.budget || 0
-  })).filter((item) => item.spent > 0 || item.budget > 0);
+    spent: result.budgets[key]?.spent || 0
+  })).filter((item) => item.spent > 0);
 
   const maxSpent = Math.max(1, ...categories.map((item) => item.spent));
   const top = [...categories].sort((a, b) => b.spent - a.spent)[0];
@@ -541,7 +539,7 @@ function InsightsPanel({ data, result }) {
         <PieChart size={20} />
         <div>
           <h3>Analisi consumi</h3>
-          <p>Capisci subito dove stanno andando i soldi</p>
+          <p>Quanto hai speso realmente per categoria</p>
         </div>
       </div>
 
@@ -556,7 +554,7 @@ function InsightsPanel({ data, result }) {
             <div className="wide-progress">
               <div style={{ width: `${Math.min(100, (item.spent / maxSpent) * 100)}%` }} />
             </div>
-            <small>{item.budget > 0 ? `${Math.round((item.spent / item.budget) * 100)}% del budget` : "Budget non impostato"}</small>
+            <small>{result.totalVariable > 0 ? `${Math.round((item.spent / result.totalVariable) * 100)}% delle spese variabili` : "0%"}</small>
           </div>
         ))}
       </div>
@@ -653,47 +651,27 @@ function CalendarPanel({ data }) {
 
 
 function FinancialCoachPanel({ result }) {
-  const variablePct = result.totalBudget > 0 ? Math.round((result.totalBudgetSpent / result.totalBudget) * 100) : 0;
   const fixedPct = result.fixedTotal > 0 ? Math.round((result.fixedPaid / result.fixedTotal) * 100) : 0;
+  const variablePct = result.totalInitial > 0 ? Math.round((result.totalVariable / result.totalInitial) * 100) : 0;
   const message =
     result.freeMoney < 0
-      ? "Attenzione: gli impegni futuri superano la disponibilità attuale. Riduci una spesa variabile o rimanda una voce non essenziale."
+      ? "Attenzione: le rate ancora da pagare superano la disponibilità attuale. Valuta con attenzione le prossime spese non essenziali."
       : result.freeMoney < 150
-        ? "Margine basso: tieni sotto controllo sfizi e acquisti extra fino a fine mese."
-        : result.totalBudgetSpent > result.totalBudget * 0.75 && result.totalBudget > 0
-          ? "Budget variabile già molto utilizzato: rallenta sulle categorie meno importanti."
-          : "Situazione stabile: hai margine per imprevisti e libertà.";
+        ? "Margine basso: controlla le spese giornaliere e le rate ancora da pagare."
+        : "Situazione stabile: continua a registrare le spese giorno per giorno per avere un quadro reale del mese.";
 
   return (
     <section className="financial-coach-panel">
       <div className="section-heading">
         <Sparkles size={20} />
-        <div>
-          <h3>Analisi finanziaria</h3>
-          <p>Lettura rapida della situazione del mese</p>
-        </div>
+        <div><h3>Analisi finanziaria</h3><p>Lettura rapida della situazione del mese</p></div>
       </div>
-
       <div className="coach-body">
-        <div className="coach-message">
-          <b>Consiglio del mese</b>
-          <p>{message}</p>
-        </div>
+        <div className="coach-message"><b>Consiglio del mese</b><p>{message}</p></div>
         <div className="coach-metrics">
-          <div>
-            <span>Variabili usate</span>
-            <strong>{variablePct}%</strong>
-            <ProgressBar spent={result.totalBudgetSpent} budget={result.totalBudget} />
-          </div>
-          <div>
-            <span>Rate pagate</span>
-            <strong>{fixedPct}%</strong>
-            <ProgressBar spent={result.fixedPaid} budget={result.fixedTotal} />
-          </div>
-          <div>
-            <span>Libertà del mese</span>
-            <strong className={result.forecast < 0 ? "danger" : ""}>{euro(result.forecast)}</strong>
-          </div>
+          <div><span>Spese variabili / entrate</span><strong>{variablePct}%</strong></div>
+          <div><span>Rate pagate</span><strong>{fixedPct}%</strong><ProgressBar spent={result.fixedPaid} budget={result.fixedTotal} /></div>
+          <div><span>Libertà del mese</span><strong className={result.forecast < 0 ? "danger" : ""}>{euro(result.forecast)}</strong></div>
         </div>
       </div>
     </section>
@@ -976,87 +954,76 @@ function FundsCard({ data, result, updateMonth }) {
   );
 }
 
-function BudgetCard({ data, result, updateMonth }) {
-  return (
-    <section className="panel budget-panel">
-      <PanelTitle color="rose" icon={<ShoppingCart />} title="Budget variabili" subtitle="budget e spese modificabili" />
-      <table>
-        <thead>
-          <tr>
-            <th>Categoria</th>
-            <th>Budget</th>
-            <th>Importo spesa</th>
-            <th>Da dove li prendo</th>
-            <th>Speso automatico</th>
-            <th>Resta da usare</th>
-          </tr>
-        </thead>
-        <tbody>
-          {CATEGORIES.map(({ key, icon: Icon }) => (
-            <tr key={key}>
-              <td className="name-cell"><Icon size={18} /> {key}</td>
-              <td><NumberField value={data.budgets[key]} onChange={(value) => updateMonth((d) => (d.budgets[key] = value))} /></td>
-              <td><NumberField value={data.quick[key].amount} onChange={(value) => updateMonth((d) => (d.quick[key].amount = value))} /></td>
-              <td>
-                <SelectField
-                  value={data.quick[key].source}
-                  options={FUNDS.map((f) => f.key)}
-                  placeholder="Scegli fondo"
-                  onChange={(value) => updateMonth((d) => (d.quick[key].source = value))}
-                />
-                {data.quick[key].amount > 0 && !data.quick[key].source && <small className="warning-inline">Scegli fondo</small>}
-              </td>
-              <td className="money">{euro(result.budgets[key].spent)}</td>
-              <td className={`money strong ${result.budgets[key].left < 0 ? "danger" : ""}`}>
-                {euro(result.budgets[key].left)}
-                <ProgressBar spent={result.budgets[key].spent} budget={result.budgets[key].budget} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td>Totale variabili</td>
-            <td>{euro(result.totalBudget)}</td>
-            <td>{euro(result.quickTotal)}</td>
-            <td></td>
-            <td>{euro(result.totalBudgetSpent)}</td>
-            <td>{euro(result.totalBudgetLeft)}</td>
-          </tr>
-        </tfoot>
-      </table>
+function DailySpendingPanel({ data, result }) {
+  const dailyMap = {};
+  data.movements.forEach((move) => {
+    const amount = Number(move.amount) || 0;
+    if (amount <= 0) return;
+    const label = move.date || "Senza data";
+    dailyMap[label] = (dailyMap[label] || 0) + amount;
+  });
 
+  const days = Object.entries(dailyMap)
+    .map(([date, amount]) => ({ date, amount }))
+    .sort((a, b) => parseItalianDate(a.date) - parseItalianDate(b.date));
+  const total = days.reduce((sum, item) => sum + item.amount, 0);
+  const palette = ["#0e63b6", "#e83e67", "#12864b", "#f97316", "#7e22ce", "#0f766e", "#f59e0b", "#64748b"];
+  let cursor = 0;
+  const stops = days.map((item, index) => {
+    const start = cursor;
+    cursor += total > 0 ? (item.amount / total) * 100 : 0;
+    return `${palette[index % palette.length]} ${start}% ${cursor}%`;
+  });
+  const pieStyle = total > 0
+    ? { background: `conic-gradient(${stops.join(", ")})` }
+    : { background: "#e2e8f0" };
+
+  return (
+    <section className="panel daily-spending-panel">
+      <PanelTitle color="rose" icon={<PieChart />} title="Spese giorno per giorno" subtitle="nessun budget: conta solo ciò che registri davvero" />
+      <div className="daily-spending-content">
+        <div className="daily-pie-wrap">
+          <div className="daily-pie" style={pieStyle}>
+            <div className="daily-pie-hole">
+              <span>Totale mese</span>
+              <strong>{euro(total)}</strong>
+            </div>
+          </div>
+        </div>
+        <div className="daily-legend">
+          {days.length === 0 && <div className="empty-state">Aggiungi le spese nel registro: il grafico comparirà automaticamente.</div>}
+          {days.map((item, index) => (
+            <div className="daily-legend-row" key={`${item.date}-${index}`}>
+              <span className="daily-dot" style={{ background: palette[index % palette.length] }} />
+              <span>{item.date}</span>
+              <strong>{euro(item.amount)}</strong>
+              <small>{total > 0 ? `${Math.round((item.amount / total) * 100)}%` : "0%"}</small>
+            </div>
+          ))}
+        </div>
+      </div>
       <div className="budget-control-strip">
         <div className="strip-card">
           <TrendingDown size={18} />
-          <div>
-            <span>Spese variabili</span>
-            <strong>{euro(result.totalBudgetSpent)}</strong>
-          </div>
+          <div><span>Spese variabili del mese</span><strong>{euro(result.totalVariable)}</strong></div>
         </div>
         <div className="strip-card">
-          <Wallet size={18} />
-          <div>
-            <span>Ancora da usare</span>
-            <strong>{euro(result.totalBudgetLeft)}</strong>
-          </div>
+          <NotebookPen size={18} />
+          <div><span>Movimenti registrati</span><strong>{data.movements.filter((m) => Number(m.amount) > 0).length}</strong></div>
         </div>
-        <button
-          className="strip-action"
-          onClick={() => updateMonth((d) => {
-            Object.keys(d.quick).forEach((key) => d.quick[key] = { amount: 0, source: "" });
-          })}
-        >
-          <Trash2 size={17} /> Pulisci spese veloci
-        </button>
       </div>
     </section>
   );
 }
 
+function parseItalianDate(value) {
+  const match = String(value || "").match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!match) return Number.MAX_SAFE_INTEGER;
+  return new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1])).getTime();
+}
+
 function SummaryPanel({ result }) {
   const statusClass = result.freeMoney < 0 ? "danger" : result.freeMoney < 300 ? "attention" : "ok";
-  const budgetUsed = result.totalBudget > 0 ? Math.round((result.totalBudgetSpent / result.totalBudget) * 100) : 0;
   const savingRate = result.totalInitial > 0 ? Math.round((result.freeMoney / result.totalInitial) * 100) : 0;
 
   const topCategory = Object.entries(result.budgets || {})
@@ -1074,7 +1041,7 @@ function SummaryPanel({ result }) {
       <div className="right-hero">
         <span>Libertà del mese</span>
         <strong className={result.forecast < 0 ? "danger" : ""}>{euro(result.forecast)}</strong>
-        <small>Quanto resta dopo budget residui e rate aperte</small>
+        <small>Quanto resta dopo le spese registrate e le rate ancora da pagare</small>
       </div>
 
       <div className="analysis-list">
@@ -1094,9 +1061,9 @@ function SummaryPanel({ result }) {
           <small>{euro(topFund.used)}</small>
         </div>
         <div className="analysis-row">
-          <span>Budget variabile usato</span>
-          <strong>{budgetUsed}%</strong>
-          <ProgressBar spent={result.totalBudgetSpent} budget={result.totalBudget} />
+          <span>Spese variabili registrate</span>
+          <strong>{euro(result.totalVariable)}</strong>
+          <small>Somma delle spese inserite giorno per giorno</small>
         </div>
         <div className="analysis-row">
           <span>Tasso libertà</span>
@@ -1131,7 +1098,7 @@ function GuideCard() {
       <h3>📌 Come funziona</h3>
       <ol>
         <li>Ogni mese parte con importi a zero.</li>
-        <li>Inserisci fondi, budget, rate e spese reali del mese.</li>
+        <li>Inserisci fondi, rate e spese reali giorno per giorno.</li>
         <li>Se fai una spesa, scegli sempre da dove prendi i soldi.</li>
         <li>Se una rata è pagata, scegli fonte e metti Pagato = Sì.</li>
         <li>Il fondo scala in automatico e il riepilogo si aggiorna.</li>
@@ -1299,13 +1266,6 @@ function calculateMonth(data) {
   const spentByCategory = Object.fromEntries(CATEGORIES.map(({ key }) => [key, 0]));
   const missingSources = [];
 
-  Object.entries(data.quick).forEach(([category, item]) => {
-    const amount = Number(item.amount) || 0;
-    spentByCategory[category] += amount;
-    if (amount > 0 && !item.source) missingSources.push(`Spesa veloce: ${category}`);
-    if (item.source) spentByFund[item.source] += amount;
-  });
-
   data.movements.forEach((item) => {
     const amount = Number(item.amount) || 0;
     spentByCategory[item.category] = (spentByCategory[item.category] || 0) + amount;
@@ -1350,16 +1310,15 @@ function calculateMonth(data) {
   const totalFixed = sumObject(funds, "fixed");
   const totalCurrent = sumObject(funds, "current");
 
-  const totalBudget = sumObject(budgets, "budget");
+  // I vecchi campi budget restano solo per compatibilità con i dati salvati,
+  // ma non influenzano più alcun calcolo.
+  const totalBudget = 0;
   const totalBudgetSpent = sumObject(budgets, "spent");
-  const totalBudgetLeft = sumObject(budgets, "left");
-  const quickTotal = Object.values(data.quick).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+  const totalBudgetLeft = 0;
+  const quickTotal = 0;
 
-  const futureCommitments = totalBudgetLeft + fixedToPay;
-  const freeMoney = totalCurrent - futureCommitments;
-
-  // V12.1: il margine finale deve coincidere con la disponibilità dopo tutti gli impegni,
-  // quindi non usa più la vecchia formula totalInitial - (totalBudget + fixedTotal).
+  const futureCommitments = fixedToPay;
+  const freeMoney = totalCurrent - fixedToPay;
   const forecast = freeMoney;
 
   return {
@@ -1487,8 +1446,7 @@ function countSavedItems(state) {
   return months.reduce((total, month) => {
     const movementCount = Array.isArray(month?.movements) ? month.movements.filter((m) => Number(m.amount) > 0).length : 0;
     const fixedCount = month?.fixed ? Object.values(month.fixed).filter((f) => Number(f.amount) > 0).length : 0;
-    const quickCount = month?.quick ? Object.values(month.quick).filter((q) => Number(q.amount) > 0).length : 0;
-    return total + movementCount + fixedCount + quickCount;
+    return total + movementCount + fixedCount;
   }, 0);
 }
 
