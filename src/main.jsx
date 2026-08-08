@@ -48,10 +48,18 @@ const CATEGORIES = [
 ];
 
 const FIXED_ITEMS = [
+  "Spese alimentari", "Benzina", "Angelo", "Sfizi",
   "Findomestic", "Nintendo + Scopa elettrica", "Netflix", "Tim Vision",
   "Wind Fisso", "Mutuo", "Garage", "PS Store", "Wind Mobile",
   "Enel", "Gas", "Gori", "Altro finanziamento", "Altro abbonamento"
 ];
+
+const VARIABLE_ALLOCATIONS = {
+  "Spese alimentari": { category: "Alimenti + prodotti casa", defaultAmount: 600 },
+  "Benzina": { category: "Benzina", defaultAmount: 80 },
+  "Angelo": { category: "Paghetta Angelo", defaultAmount: 80 },
+  "Sfizi": { category: "Sfizi", defaultAmount: 100 }
+};
 
 const euro = (value) =>
   (Number(value) || 0).toLocaleString("it-IT", { style: "currency", currency: "EUR" });
@@ -62,7 +70,7 @@ const emptyMonth = () => ({
   budgets: Object.fromEntries(CATEGORIES.map(({ key }) => [key, 0])),
   quick: Object.fromEntries(CATEGORIES.map(({ key }) => [key, { amount: 0, source: "" }])),
   movements: [],
-  fixed: Object.fromEntries(FIXED_ITEMS.map((name) => [name, { amount: 0, source: "", paid: "No" }])),
+  fixed: Object.fromEntries(FIXED_ITEMS.map((name) => [name, { amount: VARIABLE_ALLOCATIONS[name]?.defaultAmount || 0, source: "", paid: "No" }])),
   goals: [
     { id: makeId(), name: "Obiettivo risparmio", target: 0, current: 0 }
   ],
@@ -1166,35 +1174,40 @@ function MovementsCard({ data, updateMonth }) {
 function FixedCard({ data, result, updateMonth }) {
   return (
     <section className="panel fixed-panel">
-      <PanelTitle color="orange" icon={<ReceiptText />} title="Spese fisse / rate" subtitle="importi modificabili, default zero" />
+      <PanelTitle color="orange" icon={<ReceiptText />} title="Stanziamenti mensili / rate" subtitle="decidi prima gli importi: ogni spesa o rata li fa scalare" />
       <table>
         <thead>
           <tr>
             <th>Voce</th>
-            <th>Importo</th>
-            <th>Da dove li prendo</th>
-            <th>Pagato?</th>
-            <th>Da pagare</th>
+            <th>Stanziato</th>
+            <th>Fondo / collegamento</th>
+            <th>Speso / pagato</th>
+            <th>Residuo</th>
             <th>Stato</th>
           </tr>
         </thead>
         <tbody>
           {Object.entries(data.fixed).map(([name, item]) => {
-            const paid = isPaid(item.paid);
-            const missingSource = paid && item.amount > 0 && !item.source;
+            const allocation = VARIABLE_ALLOCATIONS[name];
+            const spent = allocation ? (result.budgets[allocation.category]?.spent || 0) : (isPaid(item.paid) ? Number(item.amount) || 0 : 0);
+            const remaining = Math.max(0, (Number(item.amount) || 0) - spent);
+            const paid = allocation ? remaining <= 0 && Number(item.amount) > 0 : isPaid(item.paid);
+            const missingSource = !allocation && paid && item.amount > 0 && !item.source;
             return (
               <tr key={name} className={missingSource ? "row-warning" : ""}>
                 <td className="name-cell">{name}</td>
                 <td><NumberField value={item.amount} onChange={(value) => updateMonth((d) => d.fixed[name].amount = value)} /></td>
                 <td>
-                  <SelectField value={item.source} options={FUNDS.map((f) => f.key)} placeholder="Scegli fondo" onChange={(value) => updateMonth((d) => d.fixed[name].source = value)} />
-                  {missingSource && <small className="warning-inline">Scegli fondo</small>}
+                  {allocation ? <small>Scalato dal Registro spese</small> : <>
+                    <SelectField value={item.source} options={FUNDS.map((f) => f.key)} placeholder="Scegli fondo" onChange={(value) => updateMonth((d) => d.fixed[name].source = value)} />
+                    {missingSource && <small className="warning-inline">Scegli fondo</small>}
+                  </>}
                 </td>
                 <td>
-                  <SelectField value={item.paid} options={["Sì", "No"]} onChange={(value) => updateMonth((d) => d.fixed[name].paid = value)} />
+                  {allocation ? <strong>{euro(spent)}</strong> : <SelectField value={item.paid} options={["Sì", "No"]} onChange={(value) => updateMonth((d) => d.fixed[name].paid = value)} />}
                 </td>
-                <td className="money strong">{euro(paid ? 0 : item.amount)}</td>
-                <td><span className={`status-badge ${paid ? "paid" : "pending"}`}>{paid ? "Pagata" : "Da pagare"}</span></td>
+                <td className="money strong">{euro(remaining)}</td>
+                <td><span className={`status-badge ${paid ? "paid" : "pending"}`}>{allocation ? (paid ? "Esaurito" : "Disponibile") : (paid ? "Pagata" : "Da pagare")}</span></td>
               </tr>
             );
           })}
