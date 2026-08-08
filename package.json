@@ -1,6 +1,6 @@
 {
-  "name": "bilancio-famiglia-premium",
-  "version": "12.5.5-year-separated",
+  "name": "bilancio-famiglia-zero-based",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,6 @@
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
-    "@supabase/supabase-js": "2.50.0",
     "@vitejs/plugin-react": "4.3.4",
     "vite": "5.4.11",
     "react": "18.3.1",
