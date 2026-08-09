@@ -229,11 +229,11 @@ function App() {
     const nextMonth = MONTHS[(currentIndex + 1) % 12];
     const nextYear = currentIndex === 11 ? year + 1 : year;
     const balances = result.funds.filter((f) => f.current > 0.005);
-    if (!balances.length) {
-      alert("Non ci sono residui positivi da portare al mese successivo.");
-      return;
-    }
-    if (!confirm(`Chiudere ${month} e preparare ${nextMonth} ${nextYear}? Verranno portati i saldi reali dei fondi e tutte le voci di spesa con importo 0 €.`)) return;
+    const unpaidOneOff = result.allocations.filter((a) => a.type !== "Stanziamento" && a.remaining > 0.005);
+    const warning = unpaidOneOff.length
+      ? `\n\nAttenzione: risultano ancora ${unpaidOneOff.length} rate/spese fisse non completamente pagate per ${euro(unpaidOneOff.reduce((sum, a) => sum + a.remaining, 0))}. Potrai comunque chiudere il mese.`
+      : "";
+    if (!confirm(`Chiudere ${month} e preparare ${nextMonth} ${nextYear}?\n\nVerranno trasferiti SOLO i saldi reali rimasti nei fondi. Le voci di spesa saranno riportate nel nuovo mese con importo 0 €.${warning}`)) return;
 
     setStore((prev) => {
       const next = structuredClone(prev);
@@ -521,12 +521,8 @@ function PaymentsPanel({ data, result, updateMonth }) {
     if (!selectedFund) return alert("Scegli da quale fondo scalare questo pagamento.");
     const val = Number(amount) || 0;
     if (val <= 0) return alert("Inserisci un importo maggiore di 0 €.");
-    if (!isOther) {
-      const allocationResult = result.allocations.find((a) => a.id === allocationId);
-      if (allocationResult && val > allocationResult.remaining + 0.005) {
-        return alert(`Per ${allocationResult.name} restano da pagare ${euro(allocationResult.remaining)}.`);
-      }
-    }
+    // Gli stanziamenti sono budget previsionali: la spesa reale può superarli.
+    // L'unico limite reale è la disponibilità del fondo scelto.
     if (selectedFundResult && val > selectedFundResult.current + 0.005) {
       return alert(`Disponibilità insufficiente. Nel fondo ${selectedFund.name} hai ${euro(selectedFundResult.current)}, ma stai tentando di scalare ${euro(val)}.`);
     }
@@ -561,11 +557,7 @@ function PaymentsPanel({ data, result, updateMonth }) {
     if (editDraft.allocationId !== OTHER_PAYMENT_ID) {
       const targetAllocation = result.allocations.find((a) => a.id === editDraft.allocationId);
       if (!targetAllocation) return alert("La spesa selezionata non esiste più.");
-      const reusableOldAmount = old.allocationId === editDraft.allocationId ? Number(old.amount) || 0 : 0;
-      const maxAllowed = targetAllocation.remaining + reusableOldAmount;
-      if (val > maxAllowed + 0.005) {
-        return alert(`Per ${targetAllocation.name} puoi registrare al massimo ${euro(maxAllowed)}.`);
-      }
+      // Anche in modifica uno stanziamento può essere superato: è un budget, non un tetto.
     }
 
     updateMonth((m) => {
@@ -685,20 +677,53 @@ function MonthlyOverview({ result }) {
 
 function CarryPanel({ month, year, result, carryToNextMonth }) {
   const next = MONTHS[(MONTHS.indexOf(month) + 1) % 12];
-  const hasPendingExpenses = result.totalReserved > 0.005;
+  const plannedAllocations = result.allocations.filter((a) => a.type === "Stanziamento");
+  const oneOffPending = result.allocations.filter((a) => a.type !== "Stanziamento" && a.remaining > 0.005);
+  const budgetPlanned = plannedAllocations.reduce((sum, a) => sum + (Number(a.planned) || 0), 0);
+  const budgetSpent = plannedAllocations.reduce((sum, a) => sum + (Number(a.paid) || 0), 0);
+  const budgetDiff = budgetPlanned - budgetSpent;
+  const oneOffPendingTotal = oneOffPending.reduce((sum, a) => sum + a.remaining, 0);
+
   return (
     <section className="summary-card carry-card">
-      <h2><ArrowRight size={20} /> Fine mese</h2>
-      <p>Questo è quanto prevedi che resterà dopo aver coperto <strong>tutte le spese stanziate</strong> di {month}.</p>
-      <div className="carry-value"><span>Residuo previsto a fine mese</span><strong>{euro(result.freeToAssign)}</strong></div>
-      <div className="summary-line"><span>Saldo reale oggi</span><strong>{euro(result.totalCurrent)}</strong></div>
-      <button className="primary-btn wide" onClick={carryToNextMonth} disabled={hasPendingExpenses}>
-        {hasPendingExpenses ? `Prima completa le spese di ${month}` : `Porta i residui reali in ${next}`}
+      <div className="carry-head">
+        <div>
+          <h2><ArrowRight size={20} /> Fine mese</h2>
+          <p>Puoi chiudere {month} anche se le spese reali sono diverse dagli stanziamenti.</p>
+        </div>
+        <span className="close-ready"><CheckCircle2 size={16}/> Chiusura disponibile</span>
+      </div>
+
+      <div className="closing-balance">
+        <span>Saldo reale da portare in {next}</span>
+        <strong>{euro(result.totalCurrent)}</strong>
+        <small>Somma dei saldi realmente rimasti nei tuoi fondi.</small>
+      </div>
+
+      <div className="closing-grid">
+        <div><span>Stanziamenti previsti</span><strong>{euro(budgetPlanned)}</strong></div>
+        <div><span>Spese reali su stanziamenti</span><strong>{euro(budgetSpent)}</strong></div>
+        <div className={budgetDiff >= 0 ? "positive" : "negative"}>
+          <span>{budgetDiff >= 0 ? "Risparmiato vs budget" : "Oltre il budget"}</span>
+          <strong>{euro(Math.abs(budgetDiff))}</strong>
+        </div>
+      </div>
+
+      {oneOffPending.length > 0 && (
+        <div className="closing-warning">
+          <AlertTriangle size={18}/>
+          <div>
+            <strong>Hai ancora {euro(oneOffPendingTotal)} di rate/spese fisse non pagate.</strong>
+            <span>{oneOffPending.map((a) => `${a.name} ${euro(a.remaining)}`).join(" · ")}. Questo non blocca la chiusura.</span>
+          </div>
+        </div>
+      )}
+
+      <button className="primary-btn wide close-month-btn" onClick={carryToNextMonth}>
+        <CheckCircle2 size={18}/> Chiudi {month} e prepara {next}
       </button>
-      <small>
-        {hasPendingExpenses
-          ? `Hai ancora ${euro(result.totalReserved)} di spese previste da pagare. Il trasferimento si attiva quando sono tutte coperte.`
-          : `A mese chiuso verranno trasferiti i saldi reali rimasti nei singoli fondi. Le voci di spesa saranno riportate nel nuovo mese con importo 0 €.`}
+      <small className="carry-note">
+        Nel nuovo mese vengono trasferiti i <strong>saldi reali dei fondi</strong>. Le voci di spesa restano disponibili ma ripartono da <strong>0 €</strong>; sarai tu a impostare i nuovi importi.
       </small>
     </section>
   );
