@@ -1423,3 +1423,302 @@ input:focus,select:focus{outline:none!important;border-color:#19c98b!important;b
     align-items:flex-start;
   }
 }
+
+
+/* =========================================================
+   V14 — PREMIUM FINTECH DESIGN SYSTEM
+   Solo estetica: nessuna modifica alla logica applicativa.
+   ========================================================= */
+
+:root{
+  --v14-bg:#f4f8f7;
+  --v14-surface:rgba(255,255,255,.88);
+  --v14-surface-solid:#ffffff;
+  --v14-text:#10241f;
+  --v14-muted:#71827d;
+  --v14-line:rgba(18,73,60,.09);
+  --v14-green:#08a875;
+  --v14-green-2:#12c88a;
+  --v14-blue:#2d8cff;
+  --v14-amber:#e99a12;
+  --v14-purple:#8c5cf6;
+  --v14-red:#e84d62;
+  --v14-shadow:0 14px 40px rgba(31,72,62,.075);
+  --v14-shadow-hover:0 18px 46px rgba(31,72,62,.12);
+}
+body{
+  font-family:Inter,Manrope,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;
+  letter-spacing:-.012em;
+  color:var(--v14-text);
+  background:
+    radial-gradient(circle at 16% 8%,rgba(24,201,146,.095),transparent 25%),
+    radial-gradient(circle at 86% 12%,rgba(45,140,255,.07),transparent 24%),
+    linear-gradient(145deg,#f9fcfb 0%,#f1f7f6 48%,#f6f8fb 100%) !important;
+  background-attachment:fixed !important;
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  opacity:.24;
+  background-image:linear-gradient(rgba(18,73,60,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(18,73,60,.018) 1px,transparent 1px);
+  background-size:32px 32px;
+  mask-image:linear-gradient(to bottom,black,transparent 70%);
+}
+
+/* Sidebar */
+.sidebar{
+  background:rgba(250,253,252,.86) !important;
+  backdrop-filter:blur(24px) saturate(150%);
+  -webkit-backdrop-filter:blur(24px) saturate(150%);
+  border-right:1px solid var(--v14-line) !important;
+  box-shadow:8px 0 32px rgba(27,71,60,.035);
+}
+.brand{
+  letter-spacing:-.035em !important;
+}
+.nav-item{
+  border-radius:13px !important;
+  transition:transform .18s ease,background .18s ease,box-shadow .18s ease !important;
+}
+.nav-item:hover{
+  transform:translateX(2px);
+  background:rgba(8,168,117,.07) !important;
+}
+.nav-item.active{
+  background:linear-gradient(135deg,rgba(8,168,117,.14),rgba(18,200,138,.07)) !important;
+  box-shadow:inset 0 0 0 1px rgba(8,168,117,.16),0 8px 20px rgba(8,168,117,.07);
+}
+
+/* Main typography */
+main h1,.main h1,.content h1{
+  letter-spacing:-.045em !important;
+  font-weight:800 !important;
+}
+h2,h3{
+  letter-spacing:-.028em !important;
+}
+.section-title{
+  letter-spacing:.045em !important;
+  font-size:11px !important;
+  font-weight:800 !important;
+}
+
+/* Universal premium surfaces */
+.panel,
+.summary-card,
+.fund-card,
+.metric-card,
+.side-card,
+.settings-card,
+.card{
+  border:1px solid var(--v14-line) !important;
+  box-shadow:var(--v14-shadow) !important;
+}
+.panel,
+.summary-card,
+.settings-card{
+  background:var(--v14-surface) !important;
+  backdrop-filter:blur(16px) saturate(125%);
+  -webkit-backdrop-filter:blur(16px) saturate(125%);
+  border-radius:20px !important;
+}
+.panel-head{
+  background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.36)) !important;
+  border-bottom:1px solid var(--v14-line) !important;
+}
+.fund-card{
+  border-radius:18px !important;
+  background:
+    radial-gradient(circle at 92% 5%,color-mix(in srgb,var(--fund-accent,#08a875) 12%,transparent),transparent 27%),
+    rgba(255,255,255,.86) !important;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease !important;
+}
+.fund-card:hover{
+  transform:translateY(-2px);
+  box-shadow:var(--v14-shadow-hover) !important;
+}
+.fund-card-balance{
+  font-weight:800 !important;
+  letter-spacing:-.04em !important;
+}
+.fund-progress{
+  height:5px !important;
+  border-radius:999px !important;
+  overflow:hidden;
+}
+
+/* Summary / KPI cards */
+.month-kpis,.overview-kpis{
+  gap:10px !important;
+}
+.month-kpis > *, .overview-kpis > *{
+  border-radius:16px !important;
+}
+.metric-card strong,.kpi strong,.summary-card strong{
+  letter-spacing:-.035em;
+}
+.closing-balance{
+  border-radius:16px !important;
+  background:linear-gradient(135deg,rgba(8,168,117,.09),rgba(18,200,138,.035)) !important;
+  border:1px solid rgba(8,168,117,.12) !important;
+}
+.closing-balance > strong{
+  font-size:clamp(24px,2vw,34px) !important;
+  letter-spacing:-.05em !important;
+}
+.open-total-strip,.forecast-margin-strip{
+  border-radius:14px !important;
+}
+
+/* Inputs */
+input,select,textarea{
+  border-radius:11px !important;
+  border:1px solid rgba(37,75,66,.12) !important;
+  background:rgba(255,255,255,.82) !important;
+  box-shadow:inset 0 1px 2px rgba(21,57,48,.025) !important;
+  transition:border-color .18s ease,box-shadow .18s ease,background .18s ease !important;
+}
+input:focus,select:focus,textarea:focus{
+  outline:none !important;
+  border-color:rgba(8,168,117,.5) !important;
+  box-shadow:0 0 0 4px rgba(8,168,117,.09) !important;
+  background:#fff !important;
+}
+
+/* Buttons */
+button,.primary-btn,.secondary-btn{
+  transition:transform .16s ease,box-shadow .16s ease,filter .16s ease !important;
+}
+.primary-btn{
+  border-radius:11px !important;
+  background:linear-gradient(135deg,#08a875,#0cbd80) !important;
+  box-shadow:0 8px 20px rgba(8,168,117,.18) !important;
+}
+.primary-btn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 11px 25px rgba(8,168,117,.25) !important;
+}
+.primary-btn:active,button:active{
+  transform:scale(.985);
+}
+.secondary-btn{
+  border-radius:11px !important;
+}
+
+/* Tables */
+table{
+  border-collapse:separate !important;
+  border-spacing:0 !important;
+}
+thead th{
+  font-size:10px !important;
+  letter-spacing:.065em !important;
+  text-transform:uppercase;
+  color:var(--v14-muted) !important;
+  background:rgba(245,249,248,.82) !important;
+}
+tbody tr{
+  transition:background .15s ease !important;
+}
+tbody tr:hover{
+  background:rgba(8,168,117,.035) !important;
+}
+tbody td{
+  border-bottom-color:var(--v14-line) !important;
+}
+
+/* Status / pills */
+.badge,.closed-badge,.close-ready{
+  border-radius:999px !important;
+  font-weight:750 !important;
+}
+.close-ready{
+  background:rgba(8,168,117,.09) !important;
+  border:1px solid rgba(8,168,117,.12) !important;
+}
+
+/* Footer */
+.app-footer{
+  border-top:1px solid var(--v14-line) !important;
+  background:rgba(248,251,250,.62) !important;
+  backdrop-filter:blur(14px);
+}
+
+/* Dark fintech */
+.theme-dark body,
+body.theme-dark,
+.theme-dark{
+  --v14-surface:rgba(8,28,37,.82);
+  --v14-surface-solid:#0b222c;
+  --v14-text:#edf8f4;
+  --v14-muted:#8fa6a0;
+  --v14-line:rgba(163,218,201,.09);
+  --v14-shadow:0 16px 42px rgba(0,0,0,.22);
+  --v14-shadow-hover:0 20px 52px rgba(0,0,0,.30);
+}
+body.theme-dark,
+.theme-dark body{
+  background:
+    radial-gradient(circle at 14% 8%,rgba(0,220,153,.10),transparent 25%),
+    radial-gradient(circle at 88% 8%,rgba(45,140,255,.09),transparent 24%),
+    linear-gradient(145deg,#061923 0%,#071e29 48%,#071720 100%) !important;
+}
+.theme-dark .sidebar{
+  background:rgba(5,22,30,.87) !important;
+  border-right-color:rgba(153,214,196,.08) !important;
+}
+.theme-dark .panel,
+.theme-dark .summary-card,
+.theme-dark .settings-card{
+  background:rgba(8,29,38,.84) !important;
+  border-color:rgba(153,214,196,.085) !important;
+}
+.theme-dark .panel-head{
+  background:linear-gradient(180deg,rgba(13,41,51,.72),rgba(8,29,38,.36)) !important;
+}
+.theme-dark .fund-card{
+  background:
+    radial-gradient(circle at 92% 5%,color-mix(in srgb,var(--fund-accent,#08a875) 17%,transparent),transparent 29%),
+    rgba(9,32,42,.88) !important;
+}
+.theme-dark input,.theme-dark select,.theme-dark textarea{
+  background:rgba(4,22,30,.72) !important;
+  border-color:rgba(155,215,198,.11) !important;
+}
+.theme-dark input:focus,.theme-dark select:focus,.theme-dark textarea:focus{
+  background:rgba(7,28,37,.95) !important;
+}
+.theme-dark thead th{
+  background:rgba(5,24,32,.8) !important;
+}
+.theme-dark tbody tr:hover{
+  background:rgba(0,210,145,.045) !important;
+}
+.theme-dark .app-footer{
+  background:rgba(5,21,29,.72) !important;
+}
+
+/* Gentle entrance and micro-interactions */
+@keyframes v14FadeUp{
+  from{opacity:0;transform:translateY(6px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.panel,.summary-card,.fund-card{
+  animation:v14FadeUp .28s ease both;
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    transition-duration:.001ms !important;
+  }
+}
+
+/* Mobile polish */
+@media(max-width:720px){
+  body{background-attachment:scroll !important;}
+  .panel,.summary-card,.settings-card{border-radius:17px !important;}
+  .fund-card{border-radius:16px !important;}
+  .primary-btn{min-height:44px;}
+}
