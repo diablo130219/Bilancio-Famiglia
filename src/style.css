@@ -2634,3 +2634,145 @@ tbody tr:hover td{
   .payments-panel .primary-btn:hover,
   .payments-panel .pay-btn:hover{transform:none!important}
 }
+
+
+/* =========================================================
+   V18 REAL WOW — FINAL OVERRIDES
+   ========================================================= */
+
+/* ABSOLUTE removal of legacy black table header */
+.payments-panel table thead,
+.payments-panel table thead tr,
+.payments-panel table thead th,
+.payments-panel .table-wrap table thead,
+.payments-panel .table-wrap table thead tr,
+.payments-panel .table-wrap table thead th,
+.theme-dark .payments-panel table thead,
+.theme-dark .payments-panel table thead tr,
+.theme-dark .payments-panel table thead th {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  color: #71858f !important;
+  border: 0 !important;
+}
+
+/* Hide desktop column-header strip entirely: cards are self-explanatory */
+.payments-panel table thead { display:none !important; }
+
+/* Glass history shell */
+.payments-panel .history-toolbar{
+  margin: 14px 16px 8px !important;
+  padding: 15px 17px !important;
+  border-radius: 19px !important;
+  background:
+    radial-gradient(circle at 2% 50%, rgba(21,219,155,.12), transparent 22%),
+    linear-gradient(115deg, rgba(255,255,255,.94), rgba(244,249,255,.86)) !important;
+  border:1px solid rgba(72,126,112,.10)!important;
+  box-shadow:0 13px 32px rgba(31,70,60,.07), inset 0 1px 0 #fff!important;
+}
+
+/* Real floating transaction slides */
+.payments-panel .table-wrap{
+  padding: 0 8px 12px !important;
+  overflow: visible !important;
+}
+.payments-panel table{
+  width:100%!important;
+  border-collapse:separate!important;
+  border-spacing:0 11px!important;
+}
+.payments-panel tbody tr{
+  --slide:#0bc58a;
+  --slideSoft:rgba(11,197,138,.12);
+  background:
+    radial-gradient(circle at 2% 50%, var(--slideSoft), transparent 13%),
+    radial-gradient(circle at 97% 50%, var(--slideSoft), transparent 18%),
+    linear-gradient(100deg,rgba(255,255,255,.98),rgba(247,251,255,.92))!important;
+  filter:drop-shadow(0 7px 10px rgba(30,65,57,.045));
+  transition:transform .24s cubic-bezier(.2,.85,.2,1),filter .24s ease!important;
+}
+.payments-panel tbody tr:nth-child(6n+2){--slide:#ff9418;--slideSoft:rgba(255,148,24,.13)}
+.payments-panel tbody tr:nth-child(6n+3){--slide:#178cff;--slideSoft:rgba(23,140,255,.13)}
+.payments-panel tbody tr:nth-child(6n+4){--slide:#8156ff;--slideSoft:rgba(129,86,255,.13)}
+.payments-panel tbody tr:nth-child(6n+5){--slide:#ff3f94;--slideSoft:rgba(255,63,148,.12)}
+.payments-panel tbody tr:nth-child(6n+6){--slide:#ff9b13;--slideSoft:rgba(255,155,19,.13)}
+
+.payments-panel tbody td{
+  padding:15px 13px!important;
+  background:transparent!important;
+  border-top:1px solid rgba(71,112,101,.07)!important;
+  border-bottom:1px solid rgba(71,112,101,.07)!important;
+}
+.payments-panel tbody td:first-child{
+  border-left:4px solid var(--slide)!important;
+  border-radius:18px 0 0 18px!important;
+  box-shadow:-4px 0 18px var(--slideSoft)!important;
+}
+.payments-panel tbody td:last-child{
+  border-right:1px solid rgba(71,112,101,.07)!important;
+  border-radius:0 18px 18px 0!important;
+}
+.payments-panel tbody tr:hover{
+  transform:translateY(-6px) scale(1.008)!important;
+  filter:drop-shadow(0 17px 20px rgba(24,64,53,.12)) drop-shadow(0 0 13px var(--slideSoft))!important;
+}
+.payments-panel tbody tr:hover td:nth-child(2),
+.payments-panel tbody tr:hover td:nth-child(5){
+  color:var(--slide)!important;
+}
+
+/* Action circles */
+.payments-panel tbody .icon-btn,
+.payments-panel .row-actions .icon-btn{
+  width:36px!important;height:36px!important;
+  border-radius:50%!important;
+  background:rgba(255,255,255,.90)!important;
+  border:1px solid color-mix(in srgb,var(--slide) 20%,transparent)!important;
+  box-shadow:0 7px 17px var(--slideSoft)!important;
+}
+.payments-panel tbody .icon-btn:hover,
+.payments-panel .row-actions .icon-btn:hover{
+  transform:translateY(-3px) scale(1.10)!important;
+  color:var(--slide)!important;
+  box-shadow:0 12px 24px var(--slideSoft),0 0 16px var(--slideSoft)!important;
+}
+
+/* Strong luminous register button */
+.payments-panel button[type="submit"],
+.payments-panel .primary-btn,
+.payments-panel .pay-btn{
+  background:linear-gradient(100deg,#04ad78,#08d399 42%,#258bff 72%,#a04cff 100%)!important;
+  background-size:190% 100%!important;
+  border-radius:14px!important;
+  box-shadow:0 12px 28px rgba(8,190,134,.25),0 0 24px rgba(78,113,255,.16)!important;
+  animation:v18Flow 4s ease-in-out infinite alternate!important;
+}
+@keyframes v18Flow{from{background-position:0 50%}to{background-position:100% 50%}}
+
+/* Dark version */
+.theme-dark .payments-panel .history-toolbar{
+  background:linear-gradient(115deg,rgba(11,40,49,.96),rgba(7,29,39,.93))!important;
+  box-shadow:0 14px 34px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.025)!important;
+}
+.theme-dark .payments-panel tbody tr{
+  background:
+    radial-gradient(circle at 2% 50%,var(--slideSoft),transparent 14%),
+    radial-gradient(circle at 97% 50%,var(--slideSoft),transparent 18%),
+    linear-gradient(100deg,rgba(11,40,50,.98),rgba(7,29,39,.95))!important;
+}
+.theme-dark .payments-panel tbody td{
+  border-color:rgba(157,214,198,.055)!important;
+}
+.theme-dark .payments-panel tbody .icon-btn,
+.theme-dark .payments-panel .row-actions .icon-btn{
+  background:rgba(7,28,37,.92)!important;
+}
+
+/* Touch/mobile: preserve visual cards but remove hover movement */
+@media(max-width:720px){
+  .payments-panel .table-wrap{overflow-x:auto!important}
+  .payments-panel table{min-width:760px!important}
+  .payments-panel tbody tr:hover{transform:none!important}
+}
