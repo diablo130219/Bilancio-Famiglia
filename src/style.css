@@ -1072,3 +1072,23 @@ input:focus,select:focus{outline:none!important;border-color:#19c98b!important;b
   .closing-grid{grid-template-columns:1fr}
   .close-month-btn{min-height:50px}
 }
+
+/* === V6: chiusura mensile reversibile === */
+.month-closed-card{border-color:rgba(16,185,129,.24)}
+.closed-badge{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;border-radius:999px;background:rgba(16,185,129,.12);color:#07875f;font-size:12px;font-weight:800;white-space:nowrap}
+.closed-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+.closed-summary>div{padding:14px 16px;border:1px solid var(--border);border-radius:14px;background:var(--soft);display:flex;flex-direction:column;gap:5px}
+.closed-summary span{font-size:12px;color:var(--muted);font-weight:700}
+.closed-summary strong{font-size:17px}
+.undo-close-box{display:flex;gap:11px;align-items:flex-start;padding:13px 15px;border-radius:14px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.16);margin:12px 0;color:#2563eb}
+.undo-close-box div{display:flex;flex-direction:column;gap:3px}
+.undo-close-box span{font-size:12px;line-height:1.45;color:var(--muted)}
+.undo-close-btn{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px}
+.warning-note{color:#a16207!important}
+.theme-dark .closed-badge{background:rgba(16,185,129,.14);color:#50e3ad}
+.theme-dark .undo-close-box{background:rgba(59,130,246,.10);color:#73a8ff}
+.theme-dark .warning-note{color:#f7b84b!important}
+@media(max-width:700px){
+  .closed-summary{grid-template-columns:1fr}
+  .undo-close-btn{min-height:50px}
+}

@@ -48,7 +48,9 @@ const emptyMonth = () => ({
 
 const makeYear = () => Object.fromEntries(MONTHS.map((m) => [m, emptyMonth()]));
 
-const emptyStore = () => ({ years: {} });
+const emptyStore = () => ({ years: {}, closures: {} });
+
+const closureKey = (year, month) => `${year}-${month}`;
 
 function normalizeMonth(raw) {
   return {
@@ -85,7 +87,7 @@ function loadStore() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (!saved?.years) return emptyStore();
-    const result = { years: {} };
+    const result = { years: {}, closures: saved.closures && typeof saved.closures === "object" ? saved.closures : {} };
     Object.entries(saved.years).forEach(([year, months]) => {
       result.years[year] = makeYear();
       MONTHS.forEach((m) => {
@@ -99,7 +101,7 @@ function loadStore() {
 }
 
 function normalizeCloudStore(raw) {
-  const result = { years: {} };
+  const result = { years: {}, closures: raw?.closures && typeof raw.closures === "object" ? raw.closures : {} };
   if (!raw?.years || typeof raw.years !== "object") return result;
   Object.entries(raw.years).forEach(([y, months]) => {
     result.years[y] = makeYear();
@@ -159,6 +161,7 @@ function App() {
 
   const data = getMonth(store, year, month);
   const result = useMemo(() => calculateMonth(data), [data]);
+  const currentClosure = store.closures?.[closureKey(year, month)] || null;
 
   useEffect(() => {
     let cancelled = false;
@@ -225,30 +228,47 @@ function App() {
   };
 
   const carryToNextMonth = () => {
+    const key = closureKey(year, month);
+    if (store.closures?.[key]) {
+      alert(`${month} ${year} risulta già chiuso. Se vuoi rifare la chiusura, usa prima “Annulla chiusura”.`);
+      return;
+    }
+
     const currentIndex = MONTHS.indexOf(month);
     const nextMonth = MONTHS[(currentIndex + 1) % 12];
     const nextYear = currentIndex === 11 ? year + 1 : year;
     const balances = result.funds.filter((f) => f.current > 0.005);
     const unpaidOneOff = result.allocations.filter((a) => a.type !== "Stanziamento" && a.remaining > 0.005);
     const warning = unpaidOneOff.length
-      ? `\n\nAttenzione: risultano ancora ${unpaidOneOff.length} rate/spese fisse non completamente pagate per ${euro(unpaidOneOff.reduce((sum, a) => sum + a.remaining, 0))}. Potrai comunque chiudere il mese.`
+      ? `\n\nATTENZIONE: risultano ancora ${unpaidOneOff.length} rate/spese fisse non completamente pagate per ${euro(unpaidOneOff.reduce((sum, a) => sum + a.remaining, 0))}. La chiusura è comunque consentita.`
       : "";
-    if (!confirm(`Chiudere ${month} e preparare ${nextMonth} ${nextYear}?\n\nVerranno trasferiti SOLO i saldi reali rimasti nei fondi. Le voci di spesa saranno riportate nel nuovo mese con importo 0 €.${warning}`)) return;
+
+    const confirmed = confirm(
+      `CONFERMA CHIUSURA ${month.toUpperCase()} ${year}\n\n` +
+      `Saldo reale da trasferire: ${euro(result.totalCurrent)}\n` +
+      `Destinazione: ${nextMonth} ${nextYear}\n\n` +
+      `Verranno trasferiti solo i saldi reali rimasti nei fondi. Le voci di spesa saranno riportate nel nuovo mese con importo 0 €.\n\n` +
+      `Potrai annullare questa chiusura dal pannello Fine mese.${warning}`
+    );
+    if (!confirmed) return;
 
     setStore((prev) => {
       const next = structuredClone(prev);
+      if (!next.closures) next.closures = {};
       const y = String(nextYear);
+      const targetYearExisted = Boolean(next.years[y]);
       if (!next.years[y]) next.years[y] = makeYear();
+
+      // Snapshot del mese di destinazione PRIMA della chiusura: serve per annullare.
+      const targetBefore = normalizeMonth(next.years[y][nextMonth]);
       const target = normalizeMonth(next.years[y][nextMonth]);
+
       balances.forEach((f) => {
         const existing = target.funds.find((x) => x.name.trim().toLowerCase() === f.name.trim().toLowerCase());
         if (existing) existing.amount += f.current;
         else target.funds.push({ id: makeId(), name: f.name, amount: f.current });
       });
 
-      // Riporta nel nuovo mese tutte le voci usate nel mese appena chiuso,
-      // ma azzera gli importi e non collega alcun fondo. In questo modo
-      // l'utente ritrova l'elenco pronto e decide ogni mese i nuovi importi.
       data.allocations.forEach((a) => {
         const existing = target.allocations.find(
           (x) => x.name.trim().toLowerCase() === a.name.trim().toLowerCase()
@@ -265,10 +285,45 @@ function App() {
       });
 
       next.years[y][nextMonth] = target;
+      next.closures[key] = {
+        sourceYear: year,
+        sourceMonth: month,
+        targetYear: nextYear,
+        targetMonth: nextMonth,
+        targetBefore,
+        targetYearExisted,
+        transferredAmount: result.totalCurrent,
+        closedAt: new Date().toISOString()
+      };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       return next;
     });
-    alert(`${nextMonth} ${nextYear} è pronto: residui dei fondi trasferiti e voci di spesa riportate a 0 €.`);
+    alert(`${month} ${year} è stato chiuso. ${nextMonth} ${nextYear} è pronto. Se hai chiuso per errore puoi usare “Annulla chiusura”.`);
+  };
+
+  const undoMonthClosure = () => {
+    const key = closureKey(year, month);
+    const closure = store.closures?.[key];
+    if (!closure) return alert(`${month} ${year} non risulta chiuso.`);
+
+    const confirmed = confirm(
+      `ANNULLARE LA CHIUSURA DI ${month.toUpperCase()} ${year}?\n\n` +
+      `Il mese ${closure.targetMonth} ${closure.targetYear} verrà riportato allo stato che aveva prima della chiusura. ` +
+      `Eventuali modifiche fatte in quel mese dopo la chiusura verranno perse.`
+    );
+    if (!confirmed) return;
+
+    setStore((prev) => {
+      const next = structuredClone(prev);
+      if (!next.closures?.[key]) return prev;
+      const y = String(closure.targetYear);
+      if (!next.years[y]) next.years[y] = makeYear();
+      next.years[y][closure.targetMonth] = normalizeMonth(closure.targetBefore);
+      delete next.closures[key];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+    alert(`Chiusura di ${month} ${year} annullata. ${closure.targetMonth} ${closure.targetYear} è stato ripristinato allo stato precedente.`);
   };
 
   return (
@@ -307,7 +362,7 @@ function App() {
         <div id="spese" className="allocations-full-wrap"><AllocationsPanel data={data} result={result} updateMonth={updateMonth} /></div>
         <section className="bottom-grid" id="situazione">
           <MonthlyOverview result={result} />
-          <div id="fine-mese"><CarryPanel month={month} year={year} result={result} carryToNextMonth={carryToNextMonth} /></div>
+          <div id="fine-mese"><CarryPanel month={month} year={year} result={result} closure={currentClosure} carryToNextMonth={carryToNextMonth} undoMonthClosure={undoMonthClosure} /></div>
         </section>
         <footer className="footer-tools" id="impostazioni"><button className="secondary-btn" onClick={() => downloadBackup(store)}><Download size={17} /> Scarica backup JSON</button><span><ShieldCheck size={16}/> Dati sincronizzati nel cloud e salvati anche sul dispositivo.</span></footer>
       </main>
@@ -675,7 +730,7 @@ function MonthlyOverview({ result }) {
   );
 }
 
-function CarryPanel({ month, year, result, carryToNextMonth }) {
+function CarryPanel({ month, year, result, closure, carryToNextMonth, undoMonthClosure }) {
   const next = MONTHS[(MONTHS.indexOf(month) + 1) % 12];
   const plannedAllocations = result.allocations.filter((a) => a.type === "Stanziamento");
   const oneOffPending = result.allocations.filter((a) => a.type !== "Stanziamento" && a.remaining > 0.005);
@@ -683,6 +738,32 @@ function CarryPanel({ month, year, result, carryToNextMonth }) {
   const budgetSpent = plannedAllocations.reduce((sum, a) => sum + (Number(a.paid) || 0), 0);
   const budgetDiff = budgetPlanned - budgetSpent;
   const oneOffPendingTotal = oneOffPending.reduce((sum, a) => sum + a.remaining, 0);
+
+  if (closure) {
+    return (
+      <section className="summary-card carry-card month-closed-card">
+        <div className="carry-head">
+          <div>
+            <h2><CheckCircle2 size={20} /> {month} {year} chiuso</h2>
+            <p>I residui sono stati trasferiti a <strong>{closure.targetMonth} {closure.targetYear}</strong>.</p>
+          </div>
+          <span className="closed-badge"><ShieldCheck size={16}/> Mese chiuso</span>
+        </div>
+        <div className="closed-summary">
+          <div><span>Trasferito alla chiusura</span><strong>{euro(closure.transferredAmount)}</strong></div>
+          <div><span>Chiuso il</span><strong>{closure.closedAt ? new Date(closure.closedAt).toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" }) : "—"}</strong></div>
+        </div>
+        <div className="undo-close-box">
+          <Undo2 size={19}/>
+          <div><strong>Hai chiuso il mese per errore?</strong><span>Puoi ripristinare il mese successivo esattamente allo stato precedente alla chiusura.</span></div>
+        </div>
+        <button className="secondary-btn wide undo-close-btn" onClick={undoMonthClosure}>
+          <Undo2 size={18}/> Annulla chiusura di {month}
+        </button>
+        <small className="carry-note warning-note">L’annullamento ripristina {closure.targetMonth} allo stato precedente: eventuali modifiche fatte lì dopo la chiusura verranno eliminate.</small>
+      </section>
+    );
+  }
 
   return (
     <section className="summary-card carry-card">
@@ -723,7 +804,7 @@ function CarryPanel({ month, year, result, carryToNextMonth }) {
         <CheckCircle2 size={18}/> Chiudi {month} e prepara {next}
       </button>
       <small className="carry-note">
-        Nel nuovo mese vengono trasferiti i <strong>saldi reali dei fondi</strong>. Le voci di spesa restano disponibili ma ripartono da <strong>0 €</strong>; sarai tu a impostare i nuovi importi.
+        Nel nuovo mese vengono trasferiti i <strong>saldi reali dei fondi</strong>. Le voci di spesa restano disponibili ma ripartono da <strong>0 €</strong>. La chiusura potrà essere annullata se effettuata per errore.
       </small>
     </section>
   );
