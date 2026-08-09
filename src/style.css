@@ -922,3 +922,121 @@ input:focus,select:focus{outline:none!important;border-color:#19c98b!important;b
 @media(min-width:721px) and (max-width:1280px){.payment-form{grid-template-columns:repeat(3,minmax(0,1fr))!important}.payment-form .pay-btn{height:42px!important}}
 .theme-dark .type-badge.other{background:rgba(159,103,255,.13);border:1px solid rgba(159,103,255,.26);color:#b58aff}
 .theme-light .type-badge.other{background:#f3edff;border:1px solid #dfd2f7;color:#7952b8}
+
+/* ===== Premium V4: compact desktop + app-first mobile ===== */
+.ultra-shell{grid-template-columns:205px minmax(720px,1fr) 270px!important}
+.app-sidebar{padding:22px 13px!important}
+.sidebar-brand{padding:0 8px 24px!important}
+.sidebar-nav a{padding:12px 11px!important;gap:11px!important}
+.main-workspace{padding:20px 22px 18px!important}
+.right-rail{padding:20px 14px 18px 0!important;gap:13px!important}
+.dashboard-title{margin:10px 0 10px!important}
+.dashboard-title.funds-title{margin-top:15px!important}
+
+.kpi-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 14px}
+.kpi-strip .metric{min-height:82px!important;display:grid!important;grid-template-columns:38px minmax(0,1fr)!important;align-items:center!important;justify-content:initial!important;gap:11px!important;padding:12px 13px!important}
+.kpi-strip .metric .metric-icon{width:38px!important;height:38px!important}
+.kpi-strip .metric span{font-size:9.5px!important;text-transform:uppercase;letter-spacing:.055em;font-weight:800!important;margin:0 0 3px!important}
+.kpi-strip .metric strong{font-size:20px!important;margin:0!important}
+.theme-dark .kpi-strip .metric.purple strong{color:#b589ff!important}
+.theme-light .kpi-strip .metric.purple strong{color:#7950b3!important}
+
+.funds-dashboard{display:block!important;margin-bottom:12px!important}
+.funds-center-wrap{width:100%!important}
+.funds-center-wrap .panel{height:auto!important}
+.funds-center-wrap .panel-head{min-height:58px!important;padding:11px 15px!important}
+.funds-center-wrap .panel-head-icon{width:35px!important;height:35px!important}
+.funds-center-wrap .entry-row{padding:10px 12px!important}
+.fund-card-grid{grid-template-columns:repeat(auto-fit,minmax(185px,1fr))!important;gap:10px!important;padding:12px!important}
+.fund-card{padding:13px!important;border-radius:15px!important;min-height:166px}
+.fund-card-top{min-height:32px}
+.fund-card-icon{width:34px!important;height:34px!important;border-radius:10px!important}
+.fund-card-name{margin:7px 0 2px!important;font-size:12px!important}
+.fund-card-balance{font-size:24px!important}
+.fund-card-caption{font-size:9.5px!important}
+.fund-share-badge{font-size:8px!important;padding:3px 6px!important}
+.fund-progress{height:5px!important;margin:10px 0 9px!important}
+.fund-card-meta{font-size:9px!important}
+.fund-card-meta strong{font-size:11px!important}
+.fund-card-meta .money-input{width:78px!important;height:27px!important;font-size:11px!important}
+.fund-total-strip{margin:0 12px 12px!important;padding:10px 12px!important}
+
+#registra{margin-top:12px!important;scroll-margin-top:12px}
+.payments-panel{box-shadow:0 12px 34px rgba(0,0,0,.12)!important}
+.payments-panel .panel-head{min-height:58px!important;padding:11px 15px!important}
+.payment-form{grid-template-columns:120px minmax(150px,1.15fr) 105px minmax(150px,1fr) minmax(170px,1.1fr) auto!important;padding:11px 12px!important;gap:8px!important}
+.payment-form input,.payment-form select{height:38px!important}
+.payments-panel .pay-btn{min-height:38px!important}
+
+.allocations-full-wrap{margin-top:12px!important}
+.allocation-list{padding:10px!important;gap:9px!important}
+.allocation-card{padding:9px 10px 8px!important}
+.bottom-grid{margin-top:12px!important}
+.rail-card{padding:15px!important;border-radius:15px!important}
+.coverage-ring{width:128px!important;height:128px!important;margin:2px auto 13px!important}
+.coverage-ring:before{inset:11px!important}
+.coverage-ring strong{font-size:27px!important}
+
+@media(max-width:1280px){
+  .ultra-shell{grid-template-columns:188px minmax(650px,1fr) 250px!important}
+  .main-workspace{padding-left:16px!important;padding-right:16px!important}
+  .kpi-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .fund-card-grid{grid-template-columns:repeat(auto-fit,minmax(205px,1fr))!important}
+}
+
+@media(max-width:1050px){
+  .ultra-shell{display:block!important;min-width:0!important}
+  .app-sidebar,.right-rail{display:none!important}
+  .main-workspace{padding:13px 12px 92px!important}
+  .topbar{margin-bottom:10px!important}
+  .dashboard-title{margin:12px 2px 8px!important}
+  .kpi-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
+  .kpi-strip .metric{min-height:75px!important;padding:10px!important;gap:9px!important}
+  .kpi-strip .metric .metric-icon{width:34px!important;height:34px!important}
+  .kpi-strip .metric strong{font-size:18px!important}
+  .funds-dashboard{margin:0 -2px 9px!important}
+  .funds-center-wrap .panel-head{padding:12px!important}
+  .fund-entry{grid-template-columns:minmax(0,1fr) 110px auto!important}
+  .fund-card-grid{display:flex!important;overflow-x:auto!important;scroll-snap-type:x mandatory;gap:10px!important;padding:10px 12px 13px!important;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .fund-card-grid::-webkit-scrollbar{display:none}
+  .fund-card{flex:0 0 min(78vw,310px)!important;scroll-snap-align:start;min-height:168px!important}
+  .fund-total-strip{margin:0 12px 11px!important}
+  #registra{margin-top:10px!important}
+  .payments-panel .panel-head h2{font-size:14px!important}
+  .payment-form{grid-template-columns:1fr 1fr!important;gap:8px!important;padding:11px!important}
+  .payment-form label:nth-child(2),.payment-form label:nth-child(4),.payment-form label:nth-child(5),.payment-form .pay-btn{grid-column:1/-1}
+  .payment-form label:nth-child(1){grid-column:1}
+  .payment-form label:nth-child(3){grid-column:2}
+  .payment-form .pay-btn{height:44px!important;font-size:13px!important}
+  .allocation-list{grid-template-columns:1fr!important}
+  .mobile-bottom-nav{display:grid!important}
+}
+
+@media(max-width:620px){
+  .main-workspace{padding:10px 9px 88px!important}
+  .brand h1{font-size:24px!important}
+  .brand p{font-size:11px!important}
+  .period-controls{padding:8px!important;border-radius:14px!important}
+  .kpi-strip{gap:7px}
+  .kpi-strip .metric{grid-template-columns:31px 1fr!important;min-height:68px!important;padding:9px!important;border-radius:13px!important}
+  .kpi-strip .metric .metric-icon{width:31px!important;height:31px!important}
+  .kpi-strip .metric span{font-size:8px!important;letter-spacing:.035em}
+  .kpi-strip .metric strong{font-size:16px!important}
+  .fund-entry{grid-template-columns:1fr 92px!important}
+  .fund-entry .primary-btn{grid-column:1/-1;height:42px!important}
+  .fund-card{flex-basis:84vw!important}
+  .fund-card-balance{font-size:26px!important}
+  .fund-total-strip{display:grid!important;grid-template-columns:1fr auto!important;gap:2px 8px!important}
+  .fund-total-strip small{grid-column:1/-1!important}
+  .panel-head p{max-width:260px}
+  .history-toolbar{align-items:flex-start!important;gap:8px!important}
+  .history-filters{width:100%!important;display:grid!important;grid-template-columns:1fr 1fr!important}
+  .history-filters .compact-btn{grid-column:1/-1}
+}
+
+@media(max-width:390px){
+  .kpi-strip .metric strong{font-size:15px!important}
+  .kpi-strip .metric span{font-size:7.5px!important}
+  .fund-card{flex-basis:88vw!important}
+  .mobile-bottom-nav a span{font-size:8px!important}
+}

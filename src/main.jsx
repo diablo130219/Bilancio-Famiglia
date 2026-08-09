@@ -290,18 +290,17 @@ function App() {
 
       <main className="main-workspace" id="panoramica">
         <Header month={month} setMonth={setMonth} year={year} setYear={setYear} resetMonth={resetMonth} cloudStatus={cloudStatus} />
-        <div id="fondi" className="dashboard-title"><span>FONDI DISPONIBILI</span><i></i></div>
+        <div id="fondi" className="dashboard-title"><span>PANORAMICA DEL MESE</span><i></i></div>
+        <section className="kpi-strip" aria-label="Riepilogo del mese">
+          <Metric icon={Wallet} label="Disponibile adesso" value={euro(result.totalCurrent)} tone="green" />
+          <Metric icon={ReceiptText} label="Già pagato" value={euro(result.totalPaid)} tone="blue" />
+          <Metric icon={Layers3} label="Già impegnato" value={euro(result.totalPlanned)} tone="orange" />
+          <Metric icon={CircleDollarSign} label="Libero da assegnare" value={euro(result.freeToAssign)} tone={result.freeToAssign < 0 ? "red" : "purple"} />
+        </section>
+
+        <div className="dashboard-title funds-title"><span>FONDI DISPONIBILI</span><i></i></div>
         <section className="funds-dashboard">
-          <aside className="funds-side funds-side-left">
-            <Metric icon={Banknote} label="Disponibilità totale" value={euro(result.totalInitial)} tone="green" />
-            <Metric icon={ReceiptText} label="Già pagato" value={euro(result.totalPaid)} tone="blue" />
-            <Metric icon={Layers3} label="Già impegnato" value={euro(result.totalPlanned)} tone="orange" />
-          </aside>
           <div className="funds-center-wrap"><FundsPanel data={data} result={result} updateMonth={updateMonth} /></div>
-          <aside className="funds-side funds-side-right">
-            <Metric icon={CircleDollarSign} label="Disponibilità libera" value={euro(result.freeToAssign)} tone={result.freeToAssign < 0 ? "red" : "green"} />
-            <Metric icon={Landmark} label="Spese da coprire" value={euro(result.totalReserved)} tone="blue" />
-          </aside>
         </section>
 
         <div id="registra"><PaymentsPanel data={data} result={result} updateMonth={updateMonth} /></div>
@@ -316,7 +315,6 @@ function App() {
       <aside className="right-rail">
         <section className="rail-card situation-card"><h3>SITUAZIONE DEL MESE</h3><div className="coverage-ring" style={{'--pct': `${Math.max(0, Math.min(100, result.totalPlanned ? (result.totalPaid/result.totalPlanned)*100 : 0))}%`}}><div><strong>{result.totalPlanned ? Math.round((result.totalPaid/result.totalPlanned)*100) : 0}%</strong><span>copertura</span></div></div><div className="rail-stat"><span>Soldi iniziali</span><strong>{euro(result.totalInitial)}</strong></div><div className="rail-stat"><span>Pagamenti effettuati</span><strong className="amber">{euro(result.totalPaid)}</strong></div><div className="rail-stat"><span>Saldo attuale</span><strong className="emerald">{euro(result.totalCurrent)}</strong></div></section>
         <section className="rail-card"><h3><Zap size={18}/> AZIONI RAPIDE</h3><a href="#registra"><span className="quick-icon green"><Pencil size={18}/></span><div><strong>Registra una spesa</strong><small>Scala da stanziamenti</small></div><ChevronRight size={18}/></a><a href="#spese"><span className="quick-icon orange"><Landmark size={18}/></span><div><strong>Paga una rata</strong><small>Da fondi disponibili</small></div><ChevronRight size={18}/></a><a href="#storico"><span className="quick-icon blue"><History size={18}/></span><div><strong>Vai allo storico</strong><small>Vedi tutti i pagamenti</small></div><ChevronRight size={18}/></a></section>
-        <section className="rail-card"><h3><CalendarDays size={18}/> RIEPILOGO</h3><div className="rail-stat"><span>Da coprire</span><strong>{euro(result.totalReserved)}</strong></div><div className="rail-stat"><span>Libero</span><strong className="emerald">{euro(result.freeToAssign)}</strong></div></section>
       </aside>
       <nav className="mobile-bottom-nav" aria-label="Navigazione mobile">
         <a href="#panoramica"><Home size={20}/><span>Home</span></a>
