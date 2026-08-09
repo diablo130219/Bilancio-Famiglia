@@ -873,6 +873,20 @@ function CarryPanel({ month, year, result, closure, carryToNextMonth, undoMonthC
           <small>{oneOffPending.length ? `${oneOffPending.length} voce/i ancora aperte` : "Tutte pagate"}</small>
         </div>
       </div>
+      <div className="open-total-strip">
+        <div>
+          <span>Totale ancora da coprire</span>
+          <small>{euro(budgetRemaining)} stanziamenti + {euro(oneOffPendingTotal)} rate/spese fisse</small>
+        </div>
+        <strong>{euro(budgetRemaining + oneOffPendingTotal)}</strong>
+      </div>
+      <div className="forecast-margin-strip">
+        <div>
+          <span>Margine previsto dopo aver coperto tutto</span>
+          <small>{euro(result.totalCurrent)} saldo reale − {euro(budgetRemaining + oneOffPendingTotal)} ancora da coprire</small>
+        </div>
+        <strong>{euro(result.totalCurrent - budgetRemaining - oneOffPendingTotal)}</strong>
+      </div>
 
       {Math.abs(paidDifference) > 0.01 && (
         <div className="closing-warning">

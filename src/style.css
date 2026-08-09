@@ -1351,3 +1351,75 @@ input:focus,select:focus{outline:none!important;border-color:#19c98b!important;b
     grid-template-columns:1fr !important;
   }
 }
+
+
+/* === V13.1 Chiarezza visiva situazione/fine mese === */
+.summary-card .metric small{
+  display:block;
+  margin-top:3px;
+  font-size:9px;
+  color:var(--muted);
+  font-weight:600;
+}
+.formula-note{
+  display:block;
+  margin-top:4px;
+  font-size:10px;
+  font-weight:600;
+  opacity:.72;
+}
+.open-total-strip,
+.forecast-margin-strip{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  margin-top:10px;
+  padding:11px 14px;
+  border-radius:12px;
+  border:1px solid var(--line);
+}
+.open-total-strip{
+  background:rgba(245,158,11,.08);
+  border-color:rgba(245,158,11,.22);
+}
+.forecast-margin-strip{
+  background:rgba(16,185,129,.08);
+  border-color:rgba(16,185,129,.20);
+}
+.open-total-strip > div,
+.forecast-margin-strip > div{
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+}
+.open-total-strip span,
+.forecast-margin-strip span{
+  font-size:11px;
+  font-weight:800;
+  color:var(--text);
+}
+.open-total-strip small,
+.forecast-margin-strip small{
+  margin-top:2px;
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.35;
+}
+.open-total-strip strong{
+  color:#d88900;
+  font-size:17px;
+  white-space:nowrap;
+}
+.forecast-margin-strip strong{
+  color:var(--green);
+  font-size:17px;
+  white-space:nowrap;
+}
+.theme-dark .open-total-strip strong{color:#ffb020;}
+@media(max-width:620px){
+  .open-total-strip,
+  .forecast-margin-strip{
+    align-items:flex-start;
+  }
+}
