@@ -467,13 +467,11 @@ function FundsPanel({ data, result, updateMonth, deleteUnusedFund }) {
     // Un fondo mai usato può essere eliminato SEMPRE, anche se contiene ancora denaro:
     // serve anche a correggere fondi duplicati creati per errore.
     if (!used) {
-      const duplicateText = isDuplicate ? "
-
-È presente un altro fondo con lo stesso nome: questo sembra un duplicato." : "";
+      const duplicateText = isDuplicate
+        ? "\n\nÈ presente un altro fondo con lo stesso nome: questo sembra un duplicato."
+        : "";
       const balanceText = fund.current > 0.005
-        ? `
-
-Eliminandolo verranno rimossi anche ${euro(fund.current)} dal totale dei fondi.`
+        ? `\n\nEliminandolo verranno rimossi anche ${euro(fund.current)} dal totale dei fondi.`
         : "";
       if (!confirm(`Eliminare il fondo ${fund.name}?${duplicateText}${balanceText}`)) return;
       deleteUnusedFund(id);
