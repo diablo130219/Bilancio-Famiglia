@@ -1722,3 +1722,359 @@ body.theme-dark,
   .fund-card{border-radius:16px !important;}
   .primary-btn{min-height:44px;}
 }
+
+
+/* =========================================================
+   V15 — LUX FINTECH / LIGHT EFFECTS / PREMIUM HOVER
+   ========================================================= */
+
+:root{
+  --lux-glow-green:rgba(16,215,151,.22);
+  --lux-glow-blue:rgba(61,142,255,.20);
+  --lux-glow-purple:rgba(141,92,246,.18);
+  --lux-glow-amber:rgba(240,169,40,.18);
+  --lux-border:rgba(255,255,255,.42);
+}
+
+/* Background ambience */
+body{
+  position:relative;
+  overflow-x:hidden;
+}
+body::after{
+  content:"";
+  position:fixed;
+  inset:-20%;
+  z-index:-2;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 20% 20%,rgba(14,184,133,.08),transparent 23%),
+    radial-gradient(circle at 78% 16%,rgba(58,131,255,.075),transparent 25%),
+    radial-gradient(circle at 70% 78%,rgba(139,92,246,.055),transparent 23%);
+  filter:blur(24px);
+  animation:luxAmbient 18s ease-in-out infinite alternate;
+}
+@keyframes luxAmbient{
+  0%{transform:translate3d(-1%,0,0) scale(1)}
+  50%{transform:translate3d(1.5%,-1%,0) scale(1.025)}
+  100%{transform:translate3d(0,1%,0) scale(1.01)}
+}
+
+/* Premium glass cards */
+.panel,
+.summary-card,
+.fund-card,
+.metric-card,
+.settings-card,
+.side-card,
+.card{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+}
+.panel::before,
+.summary-card::before,
+.fund-card::before,
+.metric-card::before,
+.settings-card::before,
+.side-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:
+    linear-gradient(120deg,rgba(255,255,255,.18),transparent 28%,transparent 72%,rgba(255,255,255,.07));
+  opacity:.75;
+}
+.panel::after,
+.summary-card::after,
+.fund-card::after,
+.metric-card::after,
+.settings-card::after,
+.side-card::after{
+  content:"";
+  position:absolute;
+  width:160px;
+  height:160px;
+  right:-80px;
+  top:-90px;
+  border-radius:50%;
+  pointer-events:none;
+  z-index:-1;
+  background:radial-gradient(circle,rgba(13,194,139,.13),transparent 68%);
+  filter:blur(2px);
+  opacity:.8;
+  transition:transform .35s ease,opacity .35s ease;
+}
+.panel:hover::after,
+.summary-card:hover::after,
+.fund-card:hover::after,
+.metric-card:hover::after,
+.settings-card:hover::after,
+.side-card:hover::after{
+  transform:translate(-18px,18px) scale(1.18);
+  opacity:1;
+}
+
+/* Lift + subtle 3D */
+.panel,
+.summary-card,
+.metric-card,
+.fund-card{
+  transform:translateZ(0);
+  transition:
+    transform .22s cubic-bezier(.2,.8,.2,1),
+    box-shadow .22s ease,
+    border-color .22s ease,
+    filter .22s ease !important;
+}
+.panel:hover,
+.summary-card:hover,
+.metric-card:hover{
+  transform:translateY(-3px);
+  box-shadow:
+    0 22px 48px rgba(19,57,48,.12),
+    0 0 0 1px rgba(13,184,131,.06) inset !important;
+}
+.fund-card:hover{
+  transform:translateY(-5px) scale(1.012);
+  box-shadow:
+    0 24px 54px rgba(14,57,47,.14),
+    0 0 28px rgba(13,184,131,.08) !important;
+}
+
+/* Fund-specific light accents */
+.fund-tone-0{--lux-fund:#11b981;--lux-fund-glow:rgba(17,185,129,.22)}
+.fund-tone-1{--lux-fund:#3989ff;--lux-fund-glow:rgba(57,137,255,.20)}
+.fund-tone-2{--lux-fund:#9461ff;--lux-fund-glow:rgba(148,97,255,.19)}
+.fund-tone-3{--lux-fund:#f2a82d;--lux-fund-glow:rgba(242,168,45,.18)}
+.fund-card{
+  border-color:color-mix(in srgb,var(--lux-fund,#10b981) 18%,transparent) !important;
+  background:
+    radial-gradient(circle at 90% 8%,var(--lux-fund-glow,rgba(16,185,129,.16)),transparent 29%),
+    linear-gradient(145deg,rgba(255,255,255,.94),rgba(255,255,255,.74)) !important;
+}
+.fund-card::after{
+  background:radial-gradient(circle,var(--lux-fund-glow,rgba(16,185,129,.18)),transparent 68%) !important;
+}
+.fund-card-icon{
+  box-shadow:0 8px 22px var(--lux-fund-glow,rgba(16,185,129,.16));
+}
+.fund-progress{
+  background:rgba(18,56,47,.07) !important;
+}
+.fund-progress i{
+  background:linear-gradient(90deg,var(--lux-fund,#10b981),color-mix(in srgb,var(--lux-fund,#10b981) 70%,white)) !important;
+  box-shadow:0 0 14px var(--lux-fund-glow,rgba(16,185,129,.18));
+}
+
+/* KPI cards more "slide-like" */
+.kpi-strip{
+  perspective:1000px;
+}
+.kpi-strip .metric{
+  position:relative;
+  overflow:hidden;
+  border-radius:18px !important;
+  min-height:88px;
+}
+.kpi-strip .metric::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(110deg,rgba(255,255,255,.24),transparent 30%,transparent 70%,rgba(255,255,255,.08));
+}
+.kpi-strip .metric:hover{
+  transform:translateY(-4px) rotateX(1.5deg);
+}
+.kpi-strip .metric strong{
+  font-size:clamp(20px,1.45vw,28px) !important;
+  letter-spacing:-.05em !important;
+}
+
+/* Section headers get a luminous rail */
+.dashboard-title,
+.section-title{
+  position:relative;
+}
+.dashboard-title::after{
+  content:"";
+  position:absolute;
+  left:0;
+  bottom:-5px;
+  width:48px;
+  height:2px;
+  border-radius:99px;
+  background:linear-gradient(90deg,#0cb982,#57d8ab);
+  box-shadow:0 0 12px rgba(12,185,130,.34);
+}
+
+/* Input luminous focus */
+input:hover,select:hover,textarea:hover{
+  border-color:rgba(14,170,122,.24) !important;
+}
+input:focus,select:focus,textarea:focus{
+  box-shadow:
+    0 0 0 4px rgba(8,168,117,.09),
+    0 0 22px rgba(8,168,117,.08) !important;
+}
+
+/* Buttons with sheen */
+.primary-btn,
+.pay-btn{
+  position:relative;
+  overflow:hidden;
+}
+.primary-btn::after,
+.pay-btn::after{
+  content:"";
+  position:absolute;
+  top:-50%;
+  left:-70%;
+  width:42%;
+  height:200%;
+  transform:rotate(18deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.42),transparent);
+  transition:left .55s ease;
+  pointer-events:none;
+}
+.primary-btn:hover::after,
+.pay-btn:hover::after{
+  left:135%;
+}
+.primary-btn:hover,
+.pay-btn:hover{
+  box-shadow:
+    0 12px 28px rgba(8,168,117,.25),
+    0 0 18px rgba(8,168,117,.15) !important;
+}
+
+/* Sidebar hover glow */
+.sidebar-nav a{
+  position:relative;
+  overflow:hidden;
+}
+.sidebar-nav a::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(90deg,rgba(14,190,137,.08),transparent 72%);
+  opacity:0;
+  transition:opacity .18s ease;
+}
+.sidebar-nav a:hover::before,
+.sidebar-nav a.active::before{
+  opacity:1;
+}
+.sidebar-nav a:hover svg,
+.sidebar-nav a.active svg{
+  filter:drop-shadow(0 0 6px rgba(11,190,135,.30));
+}
+
+/* Tables feel lighter */
+.table-wrap{
+  border-radius:14px;
+  overflow:auto;
+}
+tbody tr:hover td{
+  background:linear-gradient(90deg,rgba(10,175,124,.035),rgba(61,142,255,.02)) !important;
+}
+
+/* "Slides" visual grouping for allocation cards */
+.allocation-card{
+  position:relative;
+  overflow:hidden;
+}
+.allocation-card::after{
+  content:"";
+  position:absolute;
+  inset:auto 0 0 0;
+  height:2px;
+  background:linear-gradient(90deg,transparent,rgba(12,185,130,.26),transparent);
+  transform:scaleX(0);
+  transform-origin:center;
+  transition:transform .25s ease;
+}
+.allocation-card:hover::after{
+  transform:scaleX(1);
+}
+.allocation-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 15px 30px rgba(18,55,46,.08) !important;
+}
+
+/* Dark mode — deeper and richer */
+.theme-dark .panel,
+.theme-dark .summary-card,
+.theme-dark .settings-card{
+  background:
+    linear-gradient(145deg,rgba(11,36,46,.92),rgba(7,27,36,.84)) !important;
+  box-shadow:
+    0 20px 48px rgba(0,0,0,.26),
+    inset 0 1px 0 rgba(255,255,255,.025) !important;
+}
+.theme-dark .fund-card{
+  background:
+    radial-gradient(circle at 90% 8%,var(--lux-fund-glow,rgba(16,185,129,.18)),transparent 30%),
+    linear-gradient(145deg,rgba(11,38,49,.96),rgba(8,29,38,.88)) !important;
+}
+.theme-dark .panel:hover,
+.theme-dark .summary-card:hover,
+.theme-dark .metric-card:hover{
+  box-shadow:
+    0 24px 56px rgba(0,0,0,.34),
+    0 0 22px rgba(11,190,135,.055) !important;
+}
+.theme-dark .fund-card:hover{
+  box-shadow:
+    0 26px 62px rgba(0,0,0,.38),
+    0 0 30px var(--lux-fund-glow,rgba(16,185,129,.08)) !important;
+}
+.theme-dark .kpi-strip .metric{
+  background:
+    linear-gradient(145deg,rgba(12,38,48,.94),rgba(7,28,37,.90)) !important;
+}
+
+/* Premium scrollbars */
+*{
+  scrollbar-width:thin;
+  scrollbar-color:rgba(11,171,122,.35) transparent;
+}
+*::-webkit-scrollbar{
+  width:8px;
+  height:8px;
+}
+*::-webkit-scrollbar-track{
+  background:transparent;
+}
+*::-webkit-scrollbar-thumb{
+  border-radius:999px;
+  background:linear-gradient(#0ab77e,#53cda4);
+  border:2px solid transparent;
+  background-clip:padding-box;
+}
+
+/* Mobile: preserve polish without heavy animation */
+@media(max-width:720px){
+  .panel:hover,
+  .summary-card:hover,
+  .metric-card:hover,
+  .fund-card:hover,
+  .allocation-card:hover{
+    transform:none !important;
+  }
+  .kpi-strip{
+    scroll-snap-type:x proximity;
+  }
+  .kpi-strip .metric{
+    scroll-snap-align:start;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  body::after{
+    animation:none !important;
+  }
+}
