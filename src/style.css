@@ -1181,3 +1181,93 @@ input:focus,select:focus{outline:none!important;border-color:#19c98b!important;b
   position: relative;
   z-index: 2;
 }
+
+
+/* === V12 FIX: Registro spese e storico non possono sovrapporsi === */
+.payments-panel{
+  display:flex !important;
+  flex-direction:column !important;
+  height:auto !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+}
+.payments-panel > .panel-head,
+.payments-panel > .payment-form,
+.payments-panel > .small-empty,
+.payments-panel > .empty,
+.payments-panel > .history-toolbar,
+.payments-panel > .table-wrap{
+  position:relative !important;
+  flex:0 0 auto !important;
+  float:none !important;
+  clear:both !important;
+}
+.payment-form{
+  position:relative !important;
+  height:auto !important;
+  min-height:max-content !important;
+  overflow:visible !important;
+  grid-auto-rows:auto !important;
+  align-content:start !important;
+  z-index:2 !important;
+}
+.payment-form label,
+.payment-form .pay-btn{
+  position:relative !important;
+  min-width:0 !important;
+}
+.history-toolbar{
+  position:relative !important;
+  z-index:1 !important;
+  margin-top:0 !important;
+  border-top:1px solid var(--line) !important;
+}
+.payments-panel .table-wrap{
+  position:relative !important;
+  z-index:1 !important;
+  width:100% !important;
+  margin-top:0 !important;
+  overflow-x:auto !important;
+}
+
+/* Tablet: campi su 3 colonne, storico sempre sotto. */
+@media (min-width:721px) and (max-width:1280px){
+  .payments-panel .payment-form{
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  }
+  .payments-panel .payment-form .pay-btn{
+    align-self:end !important;
+  }
+}
+
+/* Mobile / finestre strette: layout verticale leggibile e senza collisioni. */
+@media (max-width:720px){
+  .payments-panel .payment-form{
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    grid-auto-flow:row !important;
+    gap:10px !important;
+  }
+  .payments-panel .payment-form label:nth-child(1),
+  .payments-panel .payment-form label:nth-child(3){
+    grid-column:auto !important;
+  }
+  .payments-panel .payment-form label:nth-child(2),
+  .payments-panel .payment-form label:nth-child(4),
+  .payments-panel .payment-form label:nth-child(5),
+  .payments-panel .payment-form .pay-btn{
+    grid-column:1 / -1 !important;
+  }
+  .payments-panel .history-toolbar{
+    padding-top:14px !important;
+  }
+}
+@media (max-width:430px){
+  .payments-panel .payment-form{
+    grid-template-columns:1fr !important;
+  }
+  .payments-panel .payment-form label,
+  .payments-panel .payment-form .pay-btn{
+    grid-column:1 !important;
+  }
+}
