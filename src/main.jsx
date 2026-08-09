@@ -58,7 +58,8 @@ function normalizeMonth(raw) {
       ? raw.funds.map((f) => ({
           id: f.id || makeId(),
           name: f.name || "Fondo",
-          amount: Number(f.amount) || 0
+          amount: Number(f.amount) || 0,
+          archived: Boolean(f.archived)
         }))
       : [],
     allocations: Array.isArray(raw?.allocations)
@@ -430,9 +431,29 @@ function FundsPanel({ data, result, updateMonth }) {
   };
 
   const removeFund = (id) => {
+    const fund = result.funds.find((f) => f.id === id);
+    if (!fund) return;
     const used = data.payments.some((p) => p.fundId === id);
-    if (used) return alert("Questo fondo è già stato usato in uno o più pagamenti. Elimina prima quei pagamenti.");
-    updateMonth((m) => { m.funds = m.funds.filter((f) => f.id !== id); });
+
+    // Se il fondo non è mai stato usato, può essere eliminato davvero.
+    if (!used) {
+      if (!confirm(`Eliminare il fondo ${fund.name}?`)) return;
+      updateMonth((m) => { m.funds = m.funds.filter((f) => f.id !== id); });
+      return;
+    }
+
+    // Se è stato usato e non ha più disponibilità, lo nascondiamo dalla dashboard
+    // ma lo conserviamo nei dati per non rompere storico e controllo contabile.
+    if (fund.current <= 0.005) {
+      if (!confirm(`Il fondo ${fund.name} è esaurito ed è già presente nello storico. Vuoi rimuoverlo dalla dashboard mantenendo intatti i pagamenti passati?`)) return;
+      updateMonth((m) => {
+        const x = m.funds.find((f) => f.id === id);
+        if (x) x.archived = true;
+      });
+      return;
+    }
+
+    alert(`Non puoi eliminare ${fund.name}: ci sono ancora ${euro(fund.current)} disponibili. Porta prima il saldo a 0 € oppure annulla/sposta i pagamenti collegati.`);
   };
 
   return (
@@ -447,7 +468,7 @@ function FundsPanel({ data, result, updateMonth }) {
       {data.funds.length === 0 ? <Empty text="Nessun fondo inserito. Tutto parte da 0." /> : (
         <>
           <div className="fund-card-grid">
-            {result.funds.map((f, index) => {
+            {result.funds.filter((f) => !f.archived).map((f, index) => {
               const pct = f.amount > 0 ? Math.max(0, Math.min(100, (f.current / f.amount) * 100)) : 0;
               const share = result.totalCurrent > 0 ? Math.max(0, (f.current / result.totalCurrent) * 100) : 0;
               const exhausted = f.current <= 0.005;
@@ -539,7 +560,7 @@ function AllocationsPanel({ data, result, updateMonth }) {
                   <div className="allocation-register-hint"><ReceiptText size={16} /> Scala dal Registro spese</div>
                 ) : (
                   <>
-                    <label className="compact-fund"><span>Scala da entrata/fondo</span><select value={quickFunds[a.id] || ""} onChange={(e) => setQuickFunds((prev) => ({ ...prev, [a.id]: e.target.value }))}><option value="">Scegli da dove scalare</option>{result.funds.map((f) => <option key={f.id} value={f.id}>{f.name} · {euro(f.current)} disponibili</option>)}</select></label>
+                    <label className="compact-fund"><span>Scala da entrata/fondo</span><select value={quickFunds[a.id] || ""} onChange={(e) => setQuickFunds((prev) => ({ ...prev, [a.id]: e.target.value }))}><option value="">Scegli da dove scalare</option>{result.funds.filter((f) => !f.archived).map((f) => <option key={f.id} value={f.id}>{f.name} · {euro(f.current)} disponibili</option>)}</select></label>
                     <label className="compact-amount"><span>Importo</span><input type="number" step="0.01" min="0" max={a.remaining} placeholder={a.remaining > 0 ? euro(a.remaining) : "0,00 €"} value={quickAmounts[a.id] ?? ""} onChange={(e) => setQuickAmounts((prev) => ({ ...prev, [a.id]: e.target.value }))} /></label>
                     <button className="pay-btn quick-pay-btn" onClick={() => quickPay(a)}><CheckCircle2 size={17} /> Scala / Paga</button>
                   </>
@@ -647,7 +668,7 @@ function PaymentsPanel({ data, result, updateMonth }) {
         <label><span>Voce</span><select value={allocationId} onChange={(e) => setAllocationId(e.target.value)}><option value="">Scegli stanziamento</option>{spendableAllocations.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}<option value={OTHER_PAYMENT_ID}>ALTRO</option></select></label>
         <label><span>Importo</span><input type="number" step="0.01" min="0" placeholder="0,00 €" value={amount} onChange={(e) => setAmount(e.target.value)} /></label>
         <label><span>Nota</span><input placeholder={isOther ? "Es. Farmacia, regalo, parcheggio…" : "Facoltativa"} value={note} onChange={(e) => setNote(e.target.value)} /></label>
-        <label><span>Scala da</span><select value={fundId} onChange={(e) => setFundId(e.target.value)}><option value="">Scegli fondo</option>{result.funds.map((f) => <option key={f.id} value={f.id}>{f.name} · {euro(f.current)} disponibili</option>)}</select></label>
+        <label><span>Scala da</span><select value={fundId} onChange={(e) => setFundId(e.target.value)}><option value="">Scegli fondo</option>{result.funds.filter((f) => !f.archived).map((f) => <option key={f.id} value={f.id}>{f.name} · {euro(f.current)} disponibili</option>)}</select></label>
         <button className="pay-btn" onClick={addPayment}><CheckCircle2 size={18} /> Registra spesa</button>
       </div>
       {spendableAllocations.length === 0 && (
