@@ -10,3 +10,7 @@ Questa versione parte da zero ogni mese.
 5. A fine mese puoi portare i residui reali al mese successivo senza copiare le spese.
 
 I dati vengono salvati nel browser con una nuova chiave locale, separata dalle versioni precedenti.
+
+
+## Chiusura mese reversibile (V6)
+La chiusura mensile salva uno snapshot del mese di destinazione prima del trasferimento. Se la chiusura viene eseguita per errore, il pulsante “Annulla chiusura” ripristina il mese successivo allo stato precedente. Lo stato di chiusura e lo snapshot vengono sincronizzati tramite lo stesso store Supabase.
