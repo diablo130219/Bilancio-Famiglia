@@ -793,11 +793,22 @@ function MonthlyOverview({ result }) {
 function CarryPanel({ month, year, result, closure, carryToNextMonth, undoMonthClosure }) {
   const next = MONTHS[(MONTHS.indexOf(month) + 1) % 12];
   const plannedAllocations = result.allocations.filter((a) => a.type === "Stanziamento");
-  const oneOffPending = result.allocations.filter((a) => a.type !== "Stanziamento" && a.remaining > 0.005);
+  const fixedAllocations = result.allocations.filter((a) => a.type !== "Stanziamento");
+
   const budgetPlanned = plannedAllocations.reduce((sum, a) => sum + (Number(a.planned) || 0), 0);
   const budgetSpent = plannedAllocations.reduce((sum, a) => sum + (Number(a.paid) || 0), 0);
-  const budgetDiff = budgetPlanned - budgetSpent;
-  const oneOffPendingTotal = oneOffPending.reduce((sum, a) => sum + a.remaining, 0);
+  const budgetRemaining = plannedAllocations.reduce((sum, a) => sum + (Number(a.remaining) || 0), 0);
+
+  const fixedPlanned = fixedAllocations.reduce((sum, a) => sum + (Number(a.planned) || 0), 0);
+  const fixedPaid = fixedAllocations.reduce((sum, a) => sum + (Number(a.paid) || 0), 0);
+  const oneOffPending = fixedAllocations.filter((a) => a.remaining > 0.005);
+  const oneOffPendingTotal = oneOffPending.reduce((sum, a) => sum + (Number(a.remaining) || 0), 0);
+
+  // ALTRO non appartiene agli stanziamenti: va mostrato separatamente.
+  const otherSpent = result.totalPaid - budgetSpent - fixedPaid;
+  const safeOtherSpent = Math.max(0, otherSpent);
+  const accountedPaid = budgetSpent + fixedPaid + safeOtherSpent;
+  const paidDifference = result.totalPaid - accountedPaid;
 
   if (closure) {
     return (
@@ -830,7 +841,7 @@ function CarryPanel({ month, year, result, closure, carryToNextMonth, undoMonthC
       <div className="carry-head">
         <div>
           <h2><ArrowRight size={20} /> Fine mese</h2>
-          <p>Puoi chiudere {month} anche se le spese reali sono diverse dagli stanziamenti.</p>
+          <p>Riepilogo reale prima della chiusura di {month}.</p>
         </div>
         <span className="close-ready"><CheckCircle2 size={16}/> Chiusura disponibile</span>
       </div>
@@ -838,17 +849,40 @@ function CarryPanel({ month, year, result, closure, carryToNextMonth, undoMonthC
       <div className="closing-balance">
         <span>Saldo reale da portare in {next}</span>
         <strong>{euro(result.totalCurrent)}</strong>
-        <small>Somma dei saldi realmente rimasti nei tuoi fondi.</small>
+        <small>{euro(result.totalInitial)} inseriti − {euro(result.totalPaid)} spesi = {euro(result.totalCurrent)} rimasti.</small>
       </div>
 
-      <div className="closing-grid">
-        <div><span>Stanziamenti previsti</span><strong>{euro(budgetPlanned)}</strong></div>
-        <div><span>Spese reali su stanziamenti</span><strong>{euro(budgetSpent)}</strong></div>
-        <div className={budgetDiff >= 0 ? "positive" : "negative"}>
-          <span>{budgetDiff >= 0 ? "Risparmiato vs budget" : "Oltre il budget"}</span>
-          <strong>{euro(Math.abs(budgetDiff))}</strong>
+      <div className="closing-section-title">Dove sono andati i soldi</div>
+      <div className="closing-grid closing-grid-four">
+        <div><span>Spese da stanziamenti</span><strong>{euro(budgetSpent)}</strong><small>su {euro(budgetPlanned)} previsti</small></div>
+        <div><span>Rate / spese fisse pagate</span><strong>{euro(fixedPaid)}</strong><small>su {euro(fixedPlanned)} previste</small></div>
+        <div><span>Altre spese</span><strong>{euro(safeOtherSpent)}</strong><small>registrate con ALTRO</small></div>
+        <div><span>Totale realmente pagato</span><strong>{euro(result.totalPaid)}</strong><small>deve coincidere con la panoramica</small></div>
+      </div>
+
+      <div className="closing-section-title">Impegni ancora aperti</div>
+      <div className="closing-grid closing-grid-two">
+        <div className={budgetRemaining > 0.005 ? "pending" : "positive"}>
+          <span>Budget stanziamenti ancora disponibile</span>
+          <strong>{euro(budgetRemaining)}</strong>
+          <small>Non è “risparmio” finché il mese non è chiuso.</small>
+        </div>
+        <div className={oneOffPendingTotal > 0.005 ? "pending" : "positive"}>
+          <span>Rate / spese fisse ancora da pagare</span>
+          <strong>{euro(oneOffPendingTotal)}</strong>
+          <small>{oneOffPending.length ? `${oneOffPending.length} voce/i ancora aperte` : "Tutte pagate"}</small>
         </div>
       </div>
+
+      {Math.abs(paidDifference) > 0.01 && (
+        <div className="closing-warning">
+          <AlertTriangle size={18}/>
+          <div>
+            <strong>Controllo pagamenti: differenza di {euro(Math.abs(paidDifference))}.</strong>
+            <span>Verifica lo storico prima di chiudere il mese.</span>
+          </div>
+        </div>
+      )}
 
       {oneOffPending.length > 0 && (
         <div className="closing-warning">

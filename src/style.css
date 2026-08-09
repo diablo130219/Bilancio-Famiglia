@@ -1309,3 +1309,45 @@ input:focus,select:focus{outline:none!important;border-color:#19c98b!important;b
     grid-template-columns:1fr !important;
   }
 }
+
+
+/* === V13: Fine mese più chiaro e contabilmente leggibile === */
+.closing-section-title{
+  margin:16px 0 8px;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.closing-grid-four{
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+}
+.closing-grid-two{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+}
+.closing-grid > div small{
+  display:block;
+  margin-top:4px;
+  font-size:10px;
+  line-height:1.35;
+  color:var(--muted);
+  font-weight:500;
+}
+.closing-grid > div.pending strong{
+  color:#d88900;
+}
+.theme-dark .closing-grid > div.pending strong{
+  color:#ffb020;
+}
+@media(max-width:1100px){
+  .closing-grid-four{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+@media(max-width:620px){
+  .closing-grid-four,
+  .closing-grid-two{
+    grid-template-columns:1fr !important;
+  }
+}
