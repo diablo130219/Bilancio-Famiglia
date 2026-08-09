@@ -450,15 +450,16 @@ function FundsPanel({ data, result, updateMonth }) {
             {result.funds.map((f, index) => {
               const pct = f.amount > 0 ? Math.max(0, Math.min(100, (f.current / f.amount) * 100)) : 0;
               const share = result.totalCurrent > 0 ? Math.max(0, (f.current / result.totalCurrent) * 100) : 0;
+              const exhausted = f.current <= 0.005;
               return (
-                <article className={`fund-card fund-tone-${index % 4}`} key={f.id}>
+                <article className={`fund-card fund-tone-${index % 4} ${exhausted ? "fund-exhausted" : ""}`} key={f.id}>
                   <div className="fund-card-top">
                     <div className="fund-card-icon"><Wallet size={20}/></div>
                     <button className="icon-btn fund-delete" onClick={() => removeFund(f.id)} title="Elimina"><Trash2 size={15}/></button>
                   </div>
                   <input className="fund-card-name" value={f.name} onChange={(e) => updateMonth((m) => { const x = m.funds.find((z) => z.id === f.id); if (x) x.name = e.target.value; })} />
                   <div className={`fund-card-balance ${f.current < -0.005 ? "negative" : ""}`}>{euro(f.current)}</div>
-                  <div className="fund-caption-row"><span className="fund-card-caption">disponibili ora</span><span className="fund-share-badge">{share.toFixed(0)}% del saldo</span></div>
+                  <div className="fund-caption-row"><span className="fund-card-caption">disponibili ora</span>{exhausted ? <span className="fund-empty-badge">ESAURITO</span> : <span className="fund-share-badge">{share.toFixed(0)}% del saldo</span>}</div>
                   <div className="fund-progress" title={`${pct.toFixed(0)}% del fondo iniziale ancora disponibile`}><i style={{width:`${pct}%`}} /></div>
                   <div className="fund-card-meta"><span>Inizio <MoneyInput value={f.amount} onChange={(v) => updateMonth((m) => { const x = m.funds.find((z) => z.id === f.id); if (x) x.amount = v; })} /></span><span>Pagato <strong>{euro(f.paid)}</strong></span></div>
                 </article>
