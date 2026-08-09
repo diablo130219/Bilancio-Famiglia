@@ -2394,3 +2394,243 @@ tbody tr:hover td{
     animation:none !important;
   }
 }
+
+
+/* ==========================================================
+   V17 — WOW SLIDE: Registra spesa + Storico pagamenti
+   Reference: luminous glassmorphism, NO black header bar
+   ========================================================== */
+
+.payments-panel{
+  --wow-green:#0bbd83;
+  --wow-blue:#2589ff;
+  --wow-violet:#8758ff;
+  --wow-pink:#ff4c9d;
+  --wow-orange:#ff9d22;
+  border:1px solid rgba(255,255,255,.78)!important;
+  border-radius:26px!important;
+  background:
+    radial-gradient(circle at 5% 0%,rgba(20,211,155,.12),transparent 23%),
+    radial-gradient(circle at 86% 3%,rgba(69,139,255,.11),transparent 25%),
+    linear-gradient(135deg,rgba(255,255,255,.94),rgba(245,249,255,.83))!important;
+  box-shadow:0 28px 70px rgba(31,75,65,.12),inset 0 1px 0 rgba(255,255,255,.92)!important;
+}
+.payments-panel:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 8% 15%,rgba(255,255,255,.92) 0 1px,transparent 2px),
+    radial-gradient(circle at 79% 17%,rgba(255,255,255,.95) 0 1px,transparent 2px),
+    radial-gradient(circle at 91% 68%,rgba(255,255,255,.85) 0 1.2px,transparent 2.2px);
+  opacity:.9;
+  animation:wowTwinkle 5.5s ease-in-out infinite alternate;
+}
+@keyframes wowTwinkle{from{opacity:.28}to{opacity:.9}}
+
+.payments-panel .panel-head{
+  min-height:82px;
+  background:
+    linear-gradient(100deg,rgba(235,255,248,.78),rgba(255,255,255,.67) 46%,rgba(239,245,255,.70))!important;
+  border-bottom:1px solid rgba(43,106,91,.07)!important;
+}
+.payments-panel .panel-head-icon{
+  background:linear-gradient(145deg,#e6fff6,#f4fffb)!important;
+  box-shadow:0 0 0 1px rgba(9,188,130,.08),0 9px 28px rgba(8,190,132,.18),0 0 28px rgba(27,232,165,.12)!important;
+}
+.payments-panel .panel-head h2{
+  background:linear-gradient(90deg,#087b58,#0aa977);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent!important;
+}
+
+.payments-panel .payment-form{
+  position:relative;
+  background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(246,251,255,.80))!important;
+  border:1px solid rgba(87,134,121,.10)!important;
+  box-shadow:0 14px 38px rgba(33,75,64,.08),inset 0 1px 0 rgba(255,255,255,.92)!important;
+}
+.payments-panel .payment-form:after{
+  content:"";
+  position:absolute;
+  right:-60px; top:-75px;
+  width:190px; height:190px;
+  border-radius:50%;
+  pointer-events:none;
+  background:radial-gradient(circle,rgba(25,221,159,.17),rgba(73,145,255,.08) 38%,transparent 68%);
+  filter:blur(5px);
+  transition:transform .35s ease;
+}
+.payments-panel .payment-form:hover:after{transform:translate(-24px,18px) scale(1.12)}
+
+.payments-panel .primary-btn,
+.payments-panel .pay-btn{
+  background:linear-gradient(100deg,#079f72 0%,#08bf89 48%,#675cf5 78%,#e34cc8 100%)!important;
+  background-size:180% 100%!important;
+  border:1px solid rgba(255,255,255,.52)!important;
+  box-shadow:0 12px 28px rgba(8,182,128,.25),0 0 25px rgba(73,125,255,.15),inset 0 1px 0 rgba(255,255,255,.38)!important;
+  animation:wowButtonFlow 5s ease-in-out infinite alternate;
+}
+@keyframes wowButtonFlow{from{background-position:0% 50%}to{background-position:100% 50%}}
+.payments-panel .primary-btn:hover,
+.payments-panel .pay-btn:hover{
+  transform:translateY(-3px) scale(1.025)!important;
+  box-shadow:0 18px 38px rgba(7,190,133,.30),0 0 34px rgba(202,72,228,.20)!important;
+}
+
+/* Remove the old black/navy table header bar completely */
+.payments-panel thead,
+.payments-panel thead tr,
+.payments-panel thead th{
+  background:transparent!important;
+  color:#6b7f8a!important;
+  box-shadow:none!important;
+  border:0!important;
+}
+.payments-panel thead th{
+  font-size:10px!important;
+  letter-spacing:.09em!important;
+  opacity:.78;
+}
+
+/* Toolbar like a floating glass slide */
+.history-toolbar{
+  background:
+    linear-gradient(125deg,rgba(250,255,253,.93),rgba(245,249,255,.87))!important;
+  border:1px solid rgba(46,104,90,.08)!important;
+  border-bottom:1px solid rgba(46,104,90,.06)!important;
+  border-radius:18px!important;
+  box-shadow:0 12px 28px rgba(28,66,57,.055),inset 0 1px 0 rgba(255,255,255,.8)!important;
+}
+.history-toolbar>strong{
+  font-size:15px!important;
+}
+.history-toolbar>strong:after{
+  width:48px!important;
+  height:3px!important;
+  background:linear-gradient(90deg,var(--wow-green),var(--wow-blue),var(--wow-violet))!important;
+}
+
+/* History outer surface */
+.payments-panel .table-wrap{
+  position:relative;
+  margin-top:10px!important;
+  border-radius:20px!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+
+/* Each transaction becomes a luminous independent slide */
+.payments-panel table{
+  border-spacing:0 10px!important;
+  padding:2px 8px 12px!important;
+}
+.payments-panel tbody tr{
+  --row-accent:var(--wow-green);
+  --row-glow:rgba(11,189,131,.12);
+  isolation:isolate;
+  background:
+    radial-gradient(circle at 95% 50%,var(--row-glow),transparent 17%),
+    linear-gradient(110deg,rgba(255,255,255,.96),rgba(249,251,255,.89))!important;
+  box-shadow:0 8px 22px rgba(31,65,58,.055),inset 0 1px 0 rgba(255,255,255,.9)!important;
+}
+.payments-panel tbody tr:nth-child(5n+2){--row-accent:var(--wow-orange);--row-glow:rgba(255,157,34,.12)}
+.payments-panel tbody tr:nth-child(5n+3){--row-accent:var(--wow-blue);--row-glow:rgba(37,137,255,.12)}
+.payments-panel tbody tr:nth-child(5n+4){--row-accent:var(--wow-violet);--row-glow:rgba(135,88,255,.12)}
+.payments-panel tbody tr:nth-child(5n+5){--row-accent:var(--wow-pink);--row-glow:rgba(255,76,157,.11)}
+.payments-panel tbody tr td{
+  border-color:rgba(32,82,69,.06)!important;
+  transition:background .22s ease,color .22s ease!important;
+}
+.payments-panel tbody tr td:first-child{
+  border-left:3px solid var(--row-accent)!important;
+  border-radius:16px 0 0 16px!important;
+}
+.payments-panel tbody tr td:last-child{border-radius:0 16px 16px 0!important}
+.payments-panel tbody tr td:first-child:before{
+  left:-3px!important;
+  top:6px!important;
+  bottom:6px!important;
+  width:4px!important;
+  background:var(--row-accent)!important;
+  box-shadow:0 0 18px var(--row-accent)!important;
+}
+.payments-panel tbody tr:hover{
+  transform:translateY(-5px) scale(1.006)!important;
+  background:
+    radial-gradient(circle at 93% 50%,var(--row-glow),transparent 24%),
+    linear-gradient(110deg,#fff,rgba(248,251,255,.97))!important;
+  box-shadow:0 19px 42px rgba(26,67,56,.12),0 0 28px var(--row-glow)!important;
+}
+.payments-panel tbody tr:hover td:nth-child(2),
+.payments-panel tbody tr:hover td:nth-child(5){
+  color:var(--row-accent)!important;
+}
+
+/* Action buttons: round illuminated controls */
+.payments-panel .row-actions .icon-btn{
+  border-radius:50%!important;
+  width:34px!important;
+  height:34px!important;
+  background:rgba(255,255,255,.72)!important;
+  border:1px solid rgba(64,100,92,.11)!important;
+  box-shadow:0 7px 18px rgba(27,62,54,.07)!important;
+}
+.payments-panel .row-actions .icon-btn:hover{
+  color:var(--row-accent)!important;
+  border-color:color-mix(in srgb,var(--row-accent) 32%,transparent)!important;
+  box-shadow:0 10px 22px var(--row-glow),0 0 14px var(--row-glow)!important;
+}
+
+/* Filters */
+.history-filters select{
+  border:1px solid rgba(48,91,81,.10)!important;
+  border-radius:13px!important;
+  box-shadow:0 8px 20px rgba(26,63,54,.06),inset 0 1px 0 rgba(255,255,255,.8)!important;
+}
+.history-filters select:hover{
+  border-color:rgba(31,151,116,.22)!important;
+  box-shadow:0 10px 24px rgba(17,121,91,.09),0 0 16px rgba(24,200,143,.06)!important;
+}
+
+/* Dark mode */
+.theme-dark .payments-panel{
+  background:
+    radial-gradient(circle at 4% 0%,rgba(10,203,143,.11),transparent 23%),
+    radial-gradient(circle at 88% 2%,rgba(76,106,255,.10),transparent 26%),
+    linear-gradient(145deg,rgba(8,31,41,.97),rgba(5,23,32,.94))!important;
+}
+.theme-dark .payments-panel thead,
+.theme-dark .payments-panel thead tr,
+.theme-dark .payments-panel thead th{
+  background:transparent!important;
+  color:#78939d!important;
+}
+.theme-dark .history-toolbar{
+  background:linear-gradient(135deg,rgba(11,39,48,.95),rgba(7,28,38,.91))!important;
+}
+.theme-dark .payments-panel tbody tr{
+  background:
+    radial-gradient(circle at 95% 50%,var(--row-glow),transparent 20%),
+    linear-gradient(110deg,rgba(11,40,50,.96),rgba(7,29,39,.92))!important;
+}
+.theme-dark .payments-panel tbody tr:hover{
+  background:
+    radial-gradient(circle at 93% 50%,var(--row-glow),transparent 27%),
+    linear-gradient(110deg,rgba(14,47,57,.98),rgba(8,32,42,.96))!important;
+}
+.theme-dark .payments-panel .row-actions .icon-btn{
+  background:rgba(8,30,39,.84)!important;
+  border-color:rgba(157,213,198,.10)!important;
+}
+
+/* Mobile keeps cards smooth and touch friendly */
+@media(max-width:720px){
+  .payments-panel{border-radius:20px!important}
+  .payments-panel tbody tr:hover{transform:none!important}
+  .payments-panel .primary-btn:hover,
+  .payments-panel .pay-btn:hover{transform:none!important}
+}
