@@ -219,6 +219,29 @@ function App() {
     });
   };
 
+  const deleteUnusedFund = (fundId) => {
+    setStore((prev) => {
+      const next = structuredClone(prev);
+      const y = String(year);
+      if (!next.years[y]) return prev;
+      const currentMonth = normalizeMonth(next.years[y][month]);
+      const linkedPayments = currentMonth.payments.filter((p) => p.fundId === fundId);
+      if (linkedPayments.length > 0) {
+        alert(`Questo fondo non può essere eliminato direttamente perché ha ${linkedPayments.length} pagamento/i collegato/i.`);
+        return prev;
+      }
+      const before = currentMonth.funds.length;
+      currentMonth.funds = currentMonth.funds.filter((f) => f.id !== fundId);
+      if (currentMonth.funds.length === before) {
+        alert("Il fondo non è stato trovato. Ricarica la pagina e riprova.");
+        return prev;
+      }
+      next.years[y][month] = currentMonth;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
   const resetMonth = () => {
     if (!confirm(`Azzerare completamente ${month} ${year}?`)) return;
     updateMonth((m) => {
@@ -356,7 +379,7 @@ function App() {
 
         <div className="dashboard-title funds-title"><span>FONDI DISPONIBILI</span><i></i></div>
         <section className="funds-dashboard">
-          <div className="funds-center-wrap"><FundsPanel data={data} result={result} updateMonth={updateMonth} /></div>
+          <div className="funds-center-wrap"><FundsPanel data={data} result={result} updateMonth={updateMonth} deleteUnusedFund={deleteUnusedFund} /></div>
         </section>
 
         <div id="registra"><PaymentsPanel data={data} result={result} updateMonth={updateMonth} /></div>
@@ -419,7 +442,7 @@ function Metric({ icon: Icon, label, value, tone }) {
   );
 }
 
-function FundsPanel({ data, result, updateMonth }) {
+function FundsPanel({ data, result, updateMonth, deleteUnusedFund }) {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
 
@@ -453,9 +476,7 @@ function FundsPanel({ data, result, updateMonth }) {
 Eliminandolo verranno rimossi anche ${euro(fund.current)} dal totale dei fondi.`
         : "";
       if (!confirm(`Eliminare il fondo ${fund.name}?${duplicateText}${balanceText}`)) return;
-      updateMonth((m) => {
-        m.funds = m.funds.filter((f) => f.id !== id);
-      });
+      deleteUnusedFund(id);
       return;
     }
 
@@ -495,7 +516,7 @@ Rimuoverlo dalla dashboard mantenendo intatti i pagamenti?`)) return;
                 <article className={`fund-card fund-tone-${index % 4} ${exhausted ? "fund-exhausted" : ""}`} key={f.id}>
                   <div className="fund-card-top">
                     <div className="fund-card-icon"><Wallet size={20}/></div>
-                    <button className="icon-btn fund-delete" onClick={() => removeFund(f.id)} title="Elimina"><Trash2 size={15}/></button>
+                    <button type="button" className="icon-btn fund-delete" onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeFund(f.id); }} title="Elimina fondo"><Trash2 size={15}/></button>
                   </div>
                   <input className="fund-card-name" value={f.name} onChange={(e) => updateMonth((m) => { const x = m.funds.find((z) => z.id === f.id); if (x) x.name = e.target.value; })} />
                   <div className={`fund-card-balance ${f.current < -0.005 ? "negative" : ""}`}>{euro(f.current)}</div>
