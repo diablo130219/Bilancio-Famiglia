@@ -433,19 +433,38 @@ function FundsPanel({ data, result, updateMonth }) {
   const removeFund = (id) => {
     const fund = result.funds.find((f) => f.id === id);
     if (!fund) return;
-    const used = data.payments.some((p) => p.fundId === id);
 
-    // Se il fondo non è mai stato usato, può essere eliminato davvero.
+    const linkedPayments = data.payments.filter((p) => p.fundId === id);
+    const used = linkedPayments.length > 0;
+    const sameNameFunds = data.funds.filter(
+      (f) => f.id !== id && !f.archived && f.name.trim().toLowerCase() === fund.name.trim().toLowerCase()
+    );
+    const isDuplicate = sameNameFunds.length > 0;
+
+    // Un fondo mai usato può essere eliminato SEMPRE, anche se contiene ancora denaro:
+    // serve anche a correggere fondi duplicati creati per errore.
     if (!used) {
-      if (!confirm(`Eliminare il fondo ${fund.name}?`)) return;
-      updateMonth((m) => { m.funds = m.funds.filter((f) => f.id !== id); });
+      const duplicateText = isDuplicate ? "
+
+È presente un altro fondo con lo stesso nome: questo sembra un duplicato." : "";
+      const balanceText = fund.current > 0.005
+        ? `
+
+Eliminandolo verranno rimossi anche ${euro(fund.current)} dal totale dei fondi.`
+        : "";
+      if (!confirm(`Eliminare il fondo ${fund.name}?${duplicateText}${balanceText}`)) return;
+      updateMonth((m) => {
+        m.funds = m.funds.filter((f) => f.id !== id);
+      });
       return;
     }
 
-    // Se è stato usato e non ha più disponibilità, lo nascondiamo dalla dashboard
-    // ma lo conserviamo nei dati per non rompere storico e controllo contabile.
+    // Un fondo usato e completamente esaurito può essere tolto dalla dashboard,
+    // ma rimane nei dati per conservare lo storico e i conti.
     if (fund.current <= 0.005) {
-      if (!confirm(`Il fondo ${fund.name} è esaurito ed è già presente nello storico. Vuoi rimuoverlo dalla dashboard mantenendo intatti i pagamenti passati?`)) return;
+      if (!confirm(`Il fondo ${fund.name} è esaurito e contiene ${linkedPayments.length} movimento/i nello storico.
+
+Rimuoverlo dalla dashboard mantenendo intatti i pagamenti?`)) return;
       updateMonth((m) => {
         const x = m.funds.find((f) => f.id === id);
         if (x) x.archived = true;
@@ -453,7 +472,7 @@ function FundsPanel({ data, result, updateMonth }) {
       return;
     }
 
-    alert(`Non puoi eliminare ${fund.name}: ci sono ancora ${euro(fund.current)} disponibili. Porta prima il saldo a 0 € oppure annulla/sposta i pagamenti collegati.`);
+    alert(`Non puoi eliminare ${fund.name} perché è già stato usato e contiene ancora ${euro(fund.current)}. Puoi annullare/spostare i pagamenti collegati oppure aspettare che il fondo arrivi a 0 €.`);
   };
 
   return (
