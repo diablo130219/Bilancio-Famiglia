@@ -813,3 +813,112 @@ input:focus,select:focus{outline:none!important;border-color:#19c98b!important;b
   .footer-tools{margin-bottom:8px!important}.table-wrap{overflow-x:auto!important}
 }
 @media(max-width:460px){.funds-side{grid-template-columns:1fr 1fr!important}.funds-side .metric:last-child{grid-column:1/-1}.fund-card-meta{font-size:9px}.fund-card-meta .money-input{width:84px!important}.mobile-bottom-nav{left:7px;right:7px}}
+
+/* ===== Premium V3 refinements ===== */
+.main-workspace{padding-top:20px!important;padding-bottom:92px!important}
+.dashboard-title{margin:14px 0 10px!important}
+.panel,.summary-card{overflow:hidden}
+.panel-head{padding-top:17px!important;padding-bottom:14px!important}
+.entry-row,.allocation-form,.payment-form{padding-top:13px!important;padding-bottom:13px!important}
+
+/* Funds: clearer hierarchy and share of total */
+.fund-card{isolation:isolate}
+.fund-card:after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.035),transparent 45%);z-index:-1}
+.fund-caption-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:5px}
+.fund-share-badge{font-size:9px;font-weight:850;letter-spacing:.04em;text-transform:uppercase;padding:5px 7px;border-radius:999px;white-space:nowrap}
+.theme-dark .fund-share-badge{color:#b9cedb;background:#102d40;border:1px solid #1c4358}
+.theme-light .fund-share-badge{color:#49687d;background:#eef6f9;border:1px solid #d9e8ee}
+.fund-progress{height:8px!important}
+.fund-card-balance{margin-top:2px}
+.fund-card-name{margin-top:8px!important}
+
+/* Register expense: primary operational surface */
+.payments-panel{position:relative;border-width:1px!important}
+.payments-panel:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;z-index:3}
+.theme-dark .payments-panel{border-color:#1b4d45!important;box-shadow:0 18px 48px rgba(0,0,0,.20),0 0 0 1px rgba(20,220,145,.025) inset!important}
+.theme-dark .payments-panel:before{background:linear-gradient(180deg,#16e29b,#168eff)}
+.theme-light .payments-panel{border-color:#cfe7dd!important;box-shadow:0 18px 44px rgba(27,88,67,.08)!important}
+.theme-light .payments-panel:before{background:linear-gradient(180deg,#0db77a,#268de8)}
+.payments-panel .panel-head h2{font-size:18px!important}
+.payments-panel .panel-head-icon{transform:scale(1.04)}
+.payment-form{display:grid!important;grid-template-columns:.86fr 1.12fr .82fr 1.28fr 1.18fr auto!important;gap:10px!important;align-items:end!important}
+.payment-form label span{font-size:9.5px!important;letter-spacing:.055em;text-transform:uppercase;font-weight:850!important}
+.payment-form .pay-btn{height:42px!important;padding-inline:18px!important;font-weight:900!important;box-shadow:0 8px 20px rgba(11,185,119,.20)}
+.theme-dark .payment-form{background:linear-gradient(90deg,rgba(15,55,57,.26),rgba(10,30,44,.14))!important}
+.theme-light .payment-form{background:linear-gradient(90deg,#f3fbf7,#f8fbfd)!important}
+
+/* Allocation cards: expenses look like financial instruments, not forms */
+.allocation-list{gap:11px!important}
+.allocation-card{position:relative;transition:transform .18s ease,opacity .18s ease,border-color .18s ease,box-shadow .18s ease}
+.allocation-card:hover{transform:translateY(-1px)}
+.allocation-card.is-budget{border-left:3px solid var(--orange)!important}
+.allocation-card.is-fixed{border-left:3px solid var(--blue)!important}
+.allocation-card.is-paid{opacity:.68}
+.allocation-card.is-paid:hover{opacity:.92}
+.allocation-title-row{display:flex;align-items:center;gap:8px;min-width:0}
+.allocation-title-row .bare-input{min-width:0;flex:1}
+.type-badge{display:inline-flex;align-items:center;justify-content:center;min-height:22px;padding:3px 8px;border-radius:999px;font-size:8px;font-weight:900;letter-spacing:.08em;white-space:nowrap}
+.theme-dark .type-badge.budget{background:rgba(255,171,42,.12);border:1px solid rgba(255,171,42,.26);color:#ffbc58}
+.theme-dark .type-badge.installment,.theme-dark .type-badge.fixed{background:rgba(45,146,255,.12);border:1px solid rgba(45,146,255,.26);color:#64b1ff}
+.theme-light .type-badge.budget{background:#fff4df;border:1px solid #f4d6a0;color:#b96f00}
+.theme-light .type-badge.installment,.theme-light .type-badge.fixed{background:#eaf4ff;border:1px solid #cfe5fa;color:#1d72c6}
+.type-select{max-width:145px!important;margin-top:4px}
+.allocation-progress-wrap{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;margin-top:8px}
+.allocation-progress-wrap small{font-size:9px;font-weight:800;white-space:nowrap;opacity:.62}
+.compact-progress{margin:0!important;height:6px!important}
+.theme-dark .allocation-card.is-budget .compact-progress span{background:linear-gradient(90deg,#f29a19,#ffbd51)!important}
+.theme-light .allocation-card.is-budget .compact-progress span{background:linear-gradient(90deg,#df8d0e,#f7b83b)!important}
+.paid-status{animation:paidPop .28s ease both}
+@keyframes paidPop{from{transform:scale(.96);opacity:.25}to{transform:scale(1);opacity:1}}
+
+/* Payment history feedback */
+.latest-payment{animation:newPaymentGlow .75s ease both}
+@keyframes newPaymentGlow{0%{box-shadow:inset 4px 0 0 rgba(16,211,137,0);background:transparent}35%{box-shadow:inset 4px 0 0 rgba(16,211,137,.9)}100%{box-shadow:inset 4px 0 0 rgba(16,211,137,.28)}}
+
+/* Monthly overview: visual split paid / reserved / free */
+.overview-premium{padding:19px!important}
+.overview-head{display:grid;grid-template-columns:1fr auto;align-items:center;gap:18px;margin-bottom:12px}
+.overview-head h2{margin-bottom:5px!important}
+.overview-head p{margin:0;max-width:520px;font-size:11px;line-height:1.45;color:var(--muted)}
+.month-donut{width:118px;height:118px;border-radius:50%;display:grid;place-items:center;position:relative;background:conic-gradient(var(--blue) 0 var(--paid),var(--orange) var(--paid) var(--reserved),var(--green) var(--reserved) 100%)}
+.month-donut:before{content:"";position:absolute;inset:11px;border-radius:50%}
+.theme-dark .month-donut:before{background:#081a28}
+.theme-light .month-donut:before{background:#fff}
+.month-donut>div{position:relative;z-index:1;text-align:center;max-width:82px}
+.month-donut strong{display:block;font-size:14px;line-height:1.1;letter-spacing:-.03em}
+.month-donut span{display:block;margin-top:4px;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.donut-legend{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.donut-legend>span{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:7px;padding:9px 10px;border-radius:12px;font-size:10px}
+.donut-legend strong{grid-column:2;font-size:12px}
+.donut-legend i{width:9px;height:9px;border-radius:50%;grid-row:1/3}.paid-dot{background:var(--blue)}.reserved-dot{background:var(--orange)}.free-dot{background:var(--green)}
+.theme-dark .donut-legend>span{background:#0b2232;border:1px solid #183d52;color:#b9c9d5}
+.theme-light .donut-legend>span{background:#f5f9fb;border:1px solid #e1eaef;color:#50677b}
+.overview-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.overview-kpis>div{padding:11px;border-radius:12px}
+.overview-kpis span,.overview-kpis strong{display:block}.overview-kpis span{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:800}.overview-kpis strong{font-size:14px;margin-top:4px}
+.theme-dark .overview-kpis>div{background:#0a1e2d;border:1px solid #17384b}.theme-light .overview-kpis>div{background:#f8fbfc;border:1px solid #e1e9ee}
+
+/* Desktop density and elegant rail */
+.right-rail{gap:13px!important}.rail-card{padding:16px!important}.rail-card h3{margin-bottom:13px!important}.coverage-ring{width:138px!important;height:138px!important}.rail-card>a{padding:10px 7px!important}
+
+/* Mobile: app-like screen rhythm */
+@media(max-width:720px){
+  .main-workspace{padding:12px 10px 96px!important}
+  .topbar{margin-bottom:10px!important}
+  .dashboard-title{margin-top:10px!important}
+  .payment-form{grid-template-columns:1fr 1fr!important}
+  .payment-form label:nth-child(4),.payment-form label:nth-child(5),.payment-form .pay-btn{grid-column:1/-1}
+  .payment-form .pay-btn{height:47px!important;font-size:13px!important}
+  .fund-caption-row{align-items:flex-start}.fund-share-badge{font-size:8px}
+  .allocation-card{border-radius:15px!important}
+  .allocation-compact-row{gap:8px!important}
+  .allocation-title-row{align-items:flex-start;flex-direction:column;gap:4px}.type-badge{align-self:flex-start}
+  .overview-head{grid-template-columns:1fr}.month-donut{margin:0 auto}.donut-legend{grid-template-columns:1fr 1fr 1fr}.overview-kpis{grid-template-columns:1fr}
+  .mobile-bottom-nav{padding-bottom:max(8px,env(safe-area-inset-bottom))!important}
+  .mobile-bottom-nav a{transition:transform .16s ease,background .16s ease}.mobile-bottom-nav a:active{transform:scale(.94)}.mobile-bottom-nav .mobile-primary:active{transform:translateY(-13px) scale(.94)}
+  .history-toolbar{position:relative!important}
+}
+
+@media(min-width:721px) and (max-width:1280px){.payment-form{grid-template-columns:repeat(3,minmax(0,1fr))!important}.payment-form .pay-btn{height:42px!important}}
+.theme-dark .type-badge.other{background:rgba(159,103,255,.13);border:1px solid rgba(159,103,255,.26);color:#b58aff}
+.theme-light .type-badge.other{background:#f3edff;border:1px solid #dfd2f7;color:#7952b8}

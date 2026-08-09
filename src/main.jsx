@@ -396,6 +396,7 @@ function FundsPanel({ data, result, updateMonth }) {
           <div className="fund-card-grid">
             {result.funds.map((f, index) => {
               const pct = f.amount > 0 ? Math.max(0, Math.min(100, (f.current / f.amount) * 100)) : 0;
+              const share = result.totalCurrent > 0 ? Math.max(0, (f.current / result.totalCurrent) * 100) : 0;
               return (
                 <article className={`fund-card fund-tone-${index % 4}`} key={f.id}>
                   <div className="fund-card-top">
@@ -404,8 +405,8 @@ function FundsPanel({ data, result, updateMonth }) {
                   </div>
                   <input className="fund-card-name" value={f.name} onChange={(e) => updateMonth((m) => { const x = m.funds.find((z) => z.id === f.id); if (x) x.name = e.target.value; })} />
                   <div className={`fund-card-balance ${f.current < -0.005 ? "negative" : ""}`}>{euro(f.current)}</div>
-                  <span className="fund-card-caption">disponibili ora</span>
-                  <div className="fund-progress"><i style={{width:`${pct}%`}} /></div>
+                  <div className="fund-caption-row"><span className="fund-card-caption">disponibili ora</span><span className="fund-share-badge">{share.toFixed(0)}% del saldo</span></div>
+                  <div className="fund-progress" title={`${pct.toFixed(0)}% del fondo iniziale ancora disponibile`}><i style={{width:`${pct}%`}} /></div>
                   <div className="fund-card-meta"><span>Inizio <MoneyInput value={f.amount} onChange={(v) => updateMonth((m) => { const x = m.funds.find((z) => z.id === f.id); if (x) x.amount = v; })} /></span><span>Pagato <strong>{euro(f.paid)}</strong></span></div>
                 </article>
               );
@@ -466,11 +467,11 @@ function AllocationsPanel({ data, result, updateMonth }) {
       {data.allocations.length === 0 ? <Empty text="Nessuna spesa prevista. Inseriscile tu mese per mese." /> : (
         <div className="allocation-list">
           {result.allocations.map((a) => (
-            <article className="allocation-card" key={a.id}>
+            <article className={`allocation-card ${a.remaining <= 0.005 ? "is-paid" : ""} ${a.type === "Stanziamento" ? "is-budget" : "is-fixed"}`} key={a.id}>
               <div className="allocation-top">
                 <div className="allocation-name">
-                  <input className="bare-input" value={a.name} onChange={(e) => updateMonth((m) => { const x = m.allocations.find((z) => z.id === a.id); if (x) x.name = e.target.value; })} />
-                  <select className="mini-select" value={a.type} onChange={(e) => updateMonth((m) => { const x = m.allocations.find((z) => z.id === a.id); if (x) x.type = e.target.value; })}>{TYPES.map((t) => <option key={t}>{t}</option>)}</select>
+                  <div className="allocation-title-row"><input className="bare-input" value={a.name} onChange={(e) => updateMonth((m) => { const x = m.allocations.find((z) => z.id === a.id); if (x) x.name = e.target.value; })} /><span className={`type-badge ${a.type === "Stanziamento" ? "budget" : a.type === "Rata" ? "installment" : a.type === "Altro" ? "other" : "fixed"}`}>{a.type === "Stanziamento" ? "STANZIAMENTO" : a.type === "Rata" ? "RATA" : a.type === "Altro" ? "ALTRO" : "FISSA"}</span></div>
+                  <select className="mini-select type-select" value={a.type} onChange={(e) => updateMonth((m) => { const x = m.allocations.find((z) => z.id === a.id); if (x) x.type = e.target.value; })}>{TYPES.map((t) => <option key={t}>{t}</option>)}</select>
                 </div>
                 <button className="icon-btn" onClick={() => removeAllocation(a.id)}><Trash2 size={16} /></button>
               </div>
@@ -490,7 +491,7 @@ function AllocationsPanel({ data, result, updateMonth }) {
                   </>
                 )}
               </div>
-              {a.planned > 0 && <div className="progress compact-progress"><span style={{ width: `${Math.min(100, (a.paid / a.planned) * 100)}%` }} /></div>}
+              {a.planned > 0 && <div className="allocation-progress-wrap"><div className="progress compact-progress"><span style={{ width: `${Math.min(100, (a.paid / a.planned) * 100)}%` }} /></div><small>{a.type === "Stanziamento" ? `${Math.round(Math.min(100, (a.paid / a.planned) * 100))}% utilizzato` : `${Math.round(Math.min(100, (a.paid / a.planned) * 100))}% pagato`}</small></div>}
               {a.paid > a.planned + 0.005 && <div className="overrun">Superato lo stanziamento di {euro(a.paid - a.planned)}</div>}
             </article>
           ))}
@@ -638,7 +639,7 @@ function PaymentsPanel({ data, result, updateMonth }) {
                     <td className="row-actions"><button className="pay-btn mini-action" onClick={saveEdit}>Salva</button><button className="secondary-btn mini-action" onClick={cancelEdit}>Annulla</button></td>
                   </tr>
                 ) : (
-                  <tr key={p.id}>
+                  <tr key={p.id} className={p.id === filteredPayments[0]?.id ? "latest-payment" : ""}>
                     <td>{formatDate(p.date)}</td>
                     <td className="strong">{p.allocationName}</td>
                     <td>{p.fundName}</td>
@@ -663,15 +664,14 @@ function PaymentsPanel({ data, result, updateMonth }) {
 function MonthlyOverview({ result }) {
   const coherenceDiff = result.totalInitial - (result.totalCurrent + result.totalPaid);
   const coherent = Math.abs(coherenceDiff) <= 0.005;
+  const base = Math.max(result.totalInitial, result.totalPaid + result.totalReserved + Math.max(0, result.freeToAssign), 1);
+  const paidPct = Math.max(0, Math.min(100, (result.totalPaid / base) * 100));
+  const reservedPct = Math.max(0, Math.min(100 - paidPct, (result.totalReserved / base) * 100));
   return (
-    <section className="summary-card">
-      <h2><Coins size={20} /> Situazione del mese</h2>
-      <div className="summary-line"><span>Soldi inseriti</span><strong>{euro(result.totalInitial)}</strong></div>
-      <div className="summary-line"><span>Destinati alle spese</span><strong>{euro(result.totalPlanned)}</strong></div>
-      <div className="summary-line emphasis"><span>Ancora liberi da assegnare</span><strong>{euro(result.freeToAssign)}</strong></div>
-      <div className="summary-line"><span>Pagamenti già effettuati</span><strong>{euro(result.totalPaid)}</strong></div>
-      <div className="summary-line"><span>Spese previste ancora da pagare</span><strong>{euro(result.totalReserved)}</strong></div>
-      <div className="summary-line"><span>Saldo reale attuale</span><strong>{euro(result.totalCurrent)}</strong></div>
+    <section className="summary-card overview-premium">
+      <div className="overview-head"><div><h2><Coins size={20} /> Situazione del mese</h2><p>Una lettura immediata di ciò che hai già pagato, ciò che resta da coprire e quello che è ancora libero.</p></div><div className="month-donut" style={{'--paid': `${paidPct}%`, '--reserved': `${paidPct + reservedPct}%`}}><div><strong>{euro(result.freeToAssign)}</strong><span>liberi</span></div></div></div>
+      <div className="donut-legend"><span><i className="paid-dot"/>Pagato <strong>{euro(result.totalPaid)}</strong></span><span><i className="reserved-dot"/>Da coprire <strong>{euro(result.totalReserved)}</strong></span><span><i className="free-dot"/>Libero <strong>{euro(result.freeToAssign)}</strong></span></div>
+      <div className="overview-kpis"><div><span>Soldi inseriti</span><strong>{euro(result.totalInitial)}</strong></div><div><span>Destinati alle spese</span><strong>{euro(result.totalPlanned)}</strong></div><div><span>Saldo reale attuale</span><strong>{euro(result.totalCurrent)}</strong></div></div>
       <div className={`coherence-box ${coherent ? "ok" : "error"}`}>
         {coherent ? <ShieldCheck size={18} /> : <AlertTriangle size={18} />}
         <span>{coherent ? "Controllo contabile: i saldi tornano." : `Attenzione: c'è una differenza contabile di ${euro(Math.abs(coherenceDiff))}.`}</span>
