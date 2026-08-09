@@ -514,7 +514,7 @@ Rimuoverlo dalla dashboard mantenendo intatti i pagamenti?`)) return;
                 <article className={`fund-card fund-tone-${index % 4} ${exhausted ? "fund-exhausted" : ""}`} key={f.id}>
                   <div className="fund-card-top">
                     <div className="fund-card-icon"><Wallet size={20}/></div>
-                    <button type="button" className="icon-btn fund-delete" onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeFund(f.id); }} title="Elimina fondo"><Trash2 size={15}/></button>
+                    <button type="button" className="icon-btn fund-delete" onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeFund(f.id); }} onPointerUp={(e) => e.stopPropagation()} aria-label={`Elimina ${f.name}`} title="Elimina fondo"><Trash2 size={15}/></button>
                   </div>
                   <input className="fund-card-name" value={f.name} onChange={(e) => updateMonth((m) => { const x = m.funds.find((z) => z.id === f.id); if (x) x.name = e.target.value; })} />
                   <div className={`fund-card-balance ${f.current < -0.005 ? "negative" : ""}`}>{euro(f.current)}</div>

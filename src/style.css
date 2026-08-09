@@ -1154,3 +1154,30 @@ input:focus,select:focus{outline:none!important;border-color:#19c98b!important;b
   .fund-empty-badge{font-size:7px;padding:3px 5px}
   .theme-dark .period-controls{background:#071925!important}
 }
+
+
+/* === V11 FIX: il cestino dei fondi deve essere sempre cliccabile === */
+.fund-card::before,
+.fund-card::after {
+  pointer-events: none !important;
+}
+.fund-card-top {
+  position: relative;
+  z-index: 20;
+}
+.fund-delete,
+.fund-card .icon-btn {
+  position: relative;
+  z-index: 30;
+  pointer-events: auto !important;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.fund-card-name,
+.fund-card-balance,
+.fund-caption-row,
+.fund-progress,
+.fund-card-meta {
+  position: relative;
+  z-index: 2;
+}
