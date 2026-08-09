@@ -310,7 +310,7 @@ function App() {
           <MonthlyOverview result={result} />
           <div id="fine-mese"><CarryPanel month={month} year={year} result={result} carryToNextMonth={carryToNextMonth} /></div>
         </section>
-        <footer className="footer-tools" id="impostazioni"><button className="secondary-btn" onClick={() => downloadBackup(store)}><Download size={17} /> Scarica backup JSON</button><span><ShieldCheck size={16}/> I dati restano salvati nel tuo browser.</span></footer>
+        <footer className="footer-tools" id="impostazioni"><button className="secondary-btn" onClick={() => downloadBackup(store)}><Download size={17} /> Scarica backup JSON</button><span><ShieldCheck size={16}/> Dati sincronizzati nel cloud e salvati anche sul dispositivo.</span></footer>
       </main>
 
       <aside className="right-rail">
@@ -318,6 +318,13 @@ function App() {
         <section className="rail-card"><h3><Zap size={18}/> AZIONI RAPIDE</h3><a href="#registra"><span className="quick-icon green"><Pencil size={18}/></span><div><strong>Registra una spesa</strong><small>Scala da stanziamenti</small></div><ChevronRight size={18}/></a><a href="#spese"><span className="quick-icon orange"><Landmark size={18}/></span><div><strong>Paga una rata</strong><small>Da fondi disponibili</small></div><ChevronRight size={18}/></a><a href="#storico"><span className="quick-icon blue"><History size={18}/></span><div><strong>Vai allo storico</strong><small>Vedi tutti i pagamenti</small></div><ChevronRight size={18}/></a></section>
         <section className="rail-card"><h3><CalendarDays size={18}/> RIEPILOGO</h3><div className="rail-stat"><span>Da coprire</span><strong>{euro(result.totalReserved)}</strong></div><div className="rail-stat"><span>Libero</span><strong className="emerald">{euro(result.freeToAssign)}</strong></div></section>
       </aside>
+      <nav className="mobile-bottom-nav" aria-label="Navigazione mobile">
+        <a href="#panoramica"><Home size={20}/><span>Home</span></a>
+        <a className="mobile-primary" href="#registra"><Plus size={24}/><span>Spesa</span></a>
+        <a href="#spese"><Landmark size={20}/><span>Spese</span></a>
+        <a href="#storico"><History size={20}/><span>Storico</span></a>
+        <a href="#situazione"><BarChart3 size={20}/><span>Riepilogo</span></a>
+      </nav>
     </div>
   );
 }
@@ -385,23 +392,27 @@ function FundsPanel({ data, result, updateMonth }) {
       </div>
 
       {data.funds.length === 0 ? <Empty text="Nessun fondo inserito. Tutto parte da 0." /> : (
-        <div className="table-wrap">
-          <table>
-            <thead><tr><th>Fondo</th><th>Inizio mese</th><th>Pagato</th><th>Disponibile ora</th><th></th></tr></thead>
-            <tbody>
-              {result.funds.map((f) => (
-                <tr key={f.id}>
-                  <td><input className="table-input name-input" value={f.name} onChange={(e) => updateMonth((m) => { const x = m.funds.find((z) => z.id === f.id); if (x) x.name = e.target.value; })} /></td>
-                  <td><MoneyInput value={f.amount} onChange={(v) => updateMonth((m) => { const x = m.funds.find((z) => z.id === f.id); if (x) x.amount = v; })} /></td>
-                  <td className="money">{euro(f.paid)}</td>
-                  <td className={`money strong ${f.current < -0.005 ? "negative" : "positive"}`}>{euro(f.current)}</td>
-                  <td><button className="icon-btn" onClick={() => removeFund(f.id)} title="Elimina"><Trash2 size={16} /></button></td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot><tr><td>Totale</td><td>{euro(result.totalInitial)}</td><td>{euro(result.totalPaid)}</td><td>{euro(result.totalCurrent)}</td><td></td></tr></tfoot>
-          </table>
-        </div>
+        <>
+          <div className="fund-card-grid">
+            {result.funds.map((f, index) => {
+              const pct = f.amount > 0 ? Math.max(0, Math.min(100, (f.current / f.amount) * 100)) : 0;
+              return (
+                <article className={`fund-card fund-tone-${index % 4}`} key={f.id}>
+                  <div className="fund-card-top">
+                    <div className="fund-card-icon"><Wallet size={20}/></div>
+                    <button className="icon-btn fund-delete" onClick={() => removeFund(f.id)} title="Elimina"><Trash2 size={15}/></button>
+                  </div>
+                  <input className="fund-card-name" value={f.name} onChange={(e) => updateMonth((m) => { const x = m.funds.find((z) => z.id === f.id); if (x) x.name = e.target.value; })} />
+                  <div className={`fund-card-balance ${f.current < -0.005 ? "negative" : ""}`}>{euro(f.current)}</div>
+                  <span className="fund-card-caption">disponibili ora</span>
+                  <div className="fund-progress"><i style={{width:`${pct}%`}} /></div>
+                  <div className="fund-card-meta"><span>Inizio <MoneyInput value={f.amount} onChange={(v) => updateMonth((m) => { const x = m.funds.find((z) => z.id === f.id); if (x) x.amount = v; })} /></span><span>Pagato <strong>{euro(f.paid)}</strong></span></div>
+                </article>
+              );
+            })}
+          </div>
+          <div className="fund-total-strip"><span>Totale fondi disponibili</span><strong>{euro(result.totalCurrent)}</strong><small>su {euro(result.totalInitial)} inseriti a inizio mese</small></div>
+        </>
       )}
     </section>
   );
