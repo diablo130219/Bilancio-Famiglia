@@ -1271,3 +1271,41 @@ input:focus,select:focus{outline:none!important;border-color:#19c98b!important;b
     grid-column:1 !important;
   }
 }
+
+
+/* === V12.1 FIX: il campo VOCE non deve invadere la DATA === */
+.payments-panel .payment-form{
+  grid-template-columns:150px minmax(220px,1.25fr) 110px minmax(170px,1fr) minmax(190px,1.1fr) auto !important;
+}
+.payments-panel .payment-form label{
+  min-width:0 !important;
+  width:100% !important;
+}
+.payments-panel .payment-form input,
+.payments-panel .payment-form select{
+  min-width:0 !important;
+  max-width:100% !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+}
+.payments-panel .payment-form input[type="date"]{
+  min-width:0 !important;
+  width:100% !important;
+}
+
+/* Mantieni i breakpoint già previsti dalla V12 */
+@media (min-width:721px) and (max-width:1280px){
+  .payments-panel .payment-form{
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  }
+}
+@media (max-width:720px){
+  .payments-panel .payment-form{
+    grid-template-columns:1fr 1fr !important;
+  }
+}
+@media (max-width:430px){
+  .payments-panel .payment-form{
+    grid-template-columns:1fr !important;
+  }
+}
